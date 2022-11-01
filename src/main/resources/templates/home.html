@@ -1,0 +1,16 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+    <script type="text/javascript" th:src="@{/js/kakaoLogin.js}"></script>
+</head>
+<body>
+<div>
+    <button style="border:none;" onclick="kakaoLogin()">
+        <img src="images/kakao_login_medium_narrow.png" alt="카카오 로그인"/>
+    </button>
+</div>
+</body>
+</html>
