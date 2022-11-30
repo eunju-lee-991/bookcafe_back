@@ -53,8 +53,8 @@ function createMember(kakaoId, nickname, email) {
                 // 이상 없음, 응답 받았음
                 if (httpRequest.status === 200) {
                 	var result = httpRequest.response;
-                	console.log(result);
-                	console.log(data);
+                	console.log("createmember result" + result);
+                	console.log("data sdfsdfsdfsdfdfgdfg" + data);
                 	console.log("stringify " + JSON.stringify(data));
             } else {
                 alert(httpRequest.status +' error. request에 뭔가 문제가 있어요.');

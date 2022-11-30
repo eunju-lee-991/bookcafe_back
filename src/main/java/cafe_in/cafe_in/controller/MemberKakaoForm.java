@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class MemberKakaoForm {
 
-    String id;
+    Long id;
     String nickname;
     String email;
 }
