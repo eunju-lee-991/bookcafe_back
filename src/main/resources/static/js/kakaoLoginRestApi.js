@@ -22,7 +22,7 @@ function kakaoLoginRestApi() {
     var redirectUrl = "http://localhost:8080/api/token";
 
     var url = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id="+restApiKey+"&redirect_uri="+redirectUrl;
-
+    console.log('여기도 비동기로');
     location.href = url;
 
 

@@ -76,6 +76,8 @@ public class KakaoLoginRestApiController {
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
 
+
+
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
         StringBuilder sb = new StringBuilder();
 

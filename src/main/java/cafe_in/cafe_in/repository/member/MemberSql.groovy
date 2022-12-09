@@ -8,6 +8,8 @@ class MemberSql {
         VALUES (:id, :nickname, :email)
     """
 
+    public static final String SELECT_MEMBER_ALL = "SELECT ID, NICKNAME, EMAIL FROM MEMBER"
+
     public static final String SELECT_MEMBER_BY_ID = """
         SELECT ID, NICKNAME, EMAIL FROM MEMBER 
         WHERE ID = :id

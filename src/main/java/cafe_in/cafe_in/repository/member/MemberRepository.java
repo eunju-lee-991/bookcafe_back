@@ -4,6 +4,8 @@ import cafe_in.cafe_in.controller.MemberKakaoForm;
 import cafe_in.cafe_in.domain.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.support.DataAccessUtils;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -12,6 +14,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Repository
@@ -22,29 +25,25 @@ public class MemberRepository {
 
     private final MemberRowMapper memberRowMapper;
 
-    public int save(MemberKakaoForm form) {
-        //회원가입 만들기
-        SqlParameterSource param = new BeanPropertySqlParameterSource(form); // 쿼리 파라미터 대소문자 구분해야함
-
-        return namedParameterJdbcTemplate.update(MemberSql.INSERT_MEMBER, param);
+    public Long join(MemberKakaoForm form) {
+        //회원가입
+        SqlParameterSource param = new BeanPropertySqlParameterSource(form); // * 쿼리 파라미터 대소문자 구분해야함
+        namedParameterJdbcTemplate.update(MemberSql.INSERT_MEMBER, param);
+        return form.getId();
     }
 
-    public List<Member> findMemberById(Long id) {
-
-        SqlParameterSource param = new MapSqlParameterSource("id", id); // 쿼리 파라미터 대소문자 구분해야함
-
-        List<Member> list = namedParameterJdbcTemplate.query(MemberSql.SELECT_MEMBER_BY_ID, param, memberRowMapper);
-
-
-      /*  Member member = namedParameterJdbcTemplate.queryForObject(MemberSql.SELECT_MEMBER_BY_ID, param, Member.class);
-        이렇게 하려면 무조건 하나의 행이 반환되야 하는군
-        그냥 .query 실행해서 list 가져와서 처리해주는 게 깔끔*/
-
-
-        for (Member m : list) {
-            log.info("zzzz.. "+ m.getId() + m.getEmail());
-        }
-
-        return list;
+    public List<Member> findMembers() {
+        return namedParameterJdbcTemplate.query(MemberSql.SELECT_MEMBER_ALL, memberRowMapper);
     }
+
+    public Optional<Member> findOne(Long id) {
+        SqlParameterSource param = new MapSqlParameterSource("id", id);
+
+        /*  Member member = namedParameterJdbcTemplate.queryForObject(MemberSql.SELECT_MEMBER_BY_ID, param, Member.class);
+        queryForObject는 하나의 행이 반환되지 않는 경우 예외 발생
+        그냥 .query 실행해서 list 가져와서 처리 */
+
+        return Optional.ofNullable(DataAccessUtils.uniqueResult(namedParameterJdbcTemplate.query(MemberSql.SELECT_MEMBER_BY_ID, param, memberRowMapper)));
+    }
+
 }
