@@ -1,15 +1,23 @@
 package cafe_in.cafe_in.controller;
 
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.dto.MemberForm;
+import cafe_in.cafe_in.dto.MemberResultDto;
+import cafe_in.cafe_in.repository.member.MemberSearch;
 import cafe_in.cafe_in.service.MemberService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -18,27 +26,44 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    ObjectMapper objectMapper = new ObjectMapper();
-
     @GetMapping("/members/{id}")
     public Member findOne(@PathVariable("id") Long id) {
-        Member findMember = memberService.findOne(id).orElse(null);
-        return findMember;
+        return memberService.findOne(id);
     }
 
     @GetMapping("/members")
-    public List<Member> findMembers() {
-        return memberService.findMembers();
+    public Result findMembers(@RequestBody(required = false) MemberSearch memberSearch) {
+        List<Member> members
+                = memberSearch == null ? memberService.findMembers() : memberService.findMembersByCriteria(memberSearch);
+
+        List<MemberResultDto> resultDtos = members.stream().map(m -> new MemberResultDto(m.getName(), m.getJoinDate())).collect(Collectors.toList());
+
+        return new Result(resultDtos.size(), resultDtos);
     }
 
     @PostMapping("/members")
-    public Long createMember(@RequestBody MemberKakaoForm request) { // *** json stringify로 보내고 RequestBody!!
-        log.info("createMember " + request.getNickname());
+    public ResponseEntity createMember(@RequestBody MemberForm memberForm) { // *** json stringify로 보내고 RequestBody!!
+        Member member = new Member();
+        member.setId(memberForm.getId());
+        member.setName(memberForm.getName());
+        member.setNickname(memberForm.getNickname());
+        member.setEmail(memberForm.getEmail());
 
-        Long joinedId = memberService.join(request);
+        memberService.join(member);
+        log.info("joined Id : {} ", member.getId());
 
-        return joinedId;
+        return ResponseEntity.status(HttpStatus.CREATED).body(member);
     }
 
+    @DeleteMapping("/members/{id}")
+    public int deleteMember(@PathVariable Long id) {
+        return memberService.deleteMember(id);
+    }
 
+    @Data
+    @AllArgsConstructor
+    static class Result<T> {
+        private int count;
+        private T data;
+    }
 }

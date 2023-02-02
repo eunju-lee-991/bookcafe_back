@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 @Component
 public class MemberRowMapper implements RowMapper<Member> {
@@ -15,8 +16,11 @@ public class MemberRowMapper implements RowMapper<Member> {
     public Member mapRow(ResultSet rs, int rowNum) throws SQLException {
         Member member = new Member();
         member.setId(rs.getLong("ID"));
-        member.setEmail(rs.getString("EMAIL"));
+        member.setName(rs.getString("NAME"));
         member.setNickname(rs.getString("NICKNAME"));
+        member.setEmail(rs.getString("EMAIL"));
+        member.setJoinDate(rs.getTimestamp("JOINDATE").toLocalDateTime());
+
         return member;
     }
 

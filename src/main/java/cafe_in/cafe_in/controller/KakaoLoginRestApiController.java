@@ -77,7 +77,6 @@ public class KakaoLoginRestApiController {
         connection.setDoOutput(true);
 
 
-
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
         StringBuilder sb = new StringBuilder();
 
@@ -100,6 +99,10 @@ public class KakaoLoginRestApiController {
         }
 
         log.info("response body : " + result);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        Map<String, String> map2 = objectMapper.readValue(result, Map.class);
 
         JsonParser jsonParser = new JacksonJsonParser();
 
@@ -131,16 +134,11 @@ public class KakaoLoginRestApiController {
 
        // String[] propertyKeys = {"kakao_account.profile", "kakao_account.email", "kakao_account.name"};
 
-        String propertyKeys = "[\"kakao_account.email\", \"kakao_account.profile\"]";
+        String propertyKeys = "[\"kakao_account.email\", \"kakao_account.profile\"]"; //name
 
         sb.append("property_keys="+propertyKeys);
-log.info("sb.toString() = {}", sb.toString() );
         bw.write(sb.toString());
         bw.flush();
-
-        ObjectMapper mp = new ObjectMapper();
-//
-//        mp.readv
 
         int responseCode = connection.getResponseCode();
         log.info("member 조회 response code : " + responseCode);

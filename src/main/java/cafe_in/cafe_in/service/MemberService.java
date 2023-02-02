@@ -1,15 +1,17 @@
 package cafe_in.cafe_in.service;
 
-import cafe_in.cafe_in.controller.MemberKakaoForm;
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.exception.DuplicateUserException;
+import cafe_in.cafe_in.exception.MemberNotFoundException;
 import cafe_in.cafe_in.repository.member.MemberRepository;
+import cafe_in.cafe_in.repository.member.MemberRepositoryImpl;
+import cafe_in.cafe_in.repository.member.MemberSearch;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -17,27 +19,36 @@ import java.util.Optional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private Long mylong;
 
-    public Long join(MemberKakaoForm form){
-        memberRepository.findOne(form.getId()).ifPresent(member -> {throw new IllegalStateException("jgjhgjhghb"); });
+    public Long join(Member member){
+        if(isExistingMember(member.getId())){
+            throw new DuplicateUserException(String.format("이미 존재하는 회원입니다. ID : %s ", member.getId()));
+        }
+        member.setJoinDate(LocalDateTime.now());
+        memberRepository.join(member);
 
-        /*memberRepository.findOne(form.getId()).ifPresent(m -> {
-            throw new IllegalStateException("이미 존재하는 회원입니다."); // list를 optional로 감싸면 return도 throw exception도 안 먹힘
-        });*/
-/*        Optional<List<Member>> one = memberRepository.findOne(form.getId());
-        one
-        .ifPresent(m -> { return ;} );*/
-
-        return memberRepository.join(form);
+        return member.getId();
     }
 
     public List<Member> findMembers(){
         return memberRepository.findMembers();
     }
 
-    public Optional<Member> findOne(Long id) {
-        return memberRepository.findOne(id);
-    //    return memberRepository.findOne(id).orElse(null);
+    public List<Member> findMembersByCriteria(MemberSearch memberSearch){
+        return memberRepository.findMembersByCriteria(memberSearch);
     }
+
+    public Member findOne(Long id) {
+      return memberRepository.findOne(id).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+    }
+
+    public int deleteMember(Long id) {
+        //delete도 notfound 예외
+        return memberRepository.deleteOne(id);
+    }
+
+    public boolean isExistingMember(Long id){ // 나중에 로그인 컨트롤러에서도 사용용
+       return memberRepository.findOne(id).isPresent();
+    }
+
 }
