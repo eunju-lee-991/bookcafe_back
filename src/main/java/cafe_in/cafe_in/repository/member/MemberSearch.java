@@ -6,7 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MemberSearch {
-    String name;
     String nickname;
     String email;
     MemberSearchOrder order;

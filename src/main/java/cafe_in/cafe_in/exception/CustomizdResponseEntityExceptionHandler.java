@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 @RestController
-@ControllerAdvice // 모든 컨트롤러가 실행될 때 사전에 실행
+//@ControllerAdvice // 모든 컨트롤러가 실행될 때 사전에 실행
 public class CustomizdResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)

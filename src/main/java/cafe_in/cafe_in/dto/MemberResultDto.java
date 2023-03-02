@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 public class MemberResultDto {
-    private String name;
-    private LocalDateTime joinDate;
+    private Long id;
+    private String nickname;
+    private String email;
 }

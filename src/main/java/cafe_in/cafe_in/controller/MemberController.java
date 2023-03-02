@@ -3,6 +3,7 @@ package cafe_in.cafe_in.controller;
 import cafe_in.cafe_in.domain.Member;
 import cafe_in.cafe_in.dto.MemberForm;
 import cafe_in.cafe_in.dto.MemberResultDto;
+import cafe_in.cafe_in.exception.MemberNotFoundException;
 import cafe_in.cafe_in.repository.member.MemberSearch;
 import cafe_in.cafe_in.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,16 +37,15 @@ public class MemberController {
         List<Member> members
                 = memberSearch == null ? memberService.findMembers() : memberService.findMembersByCriteria(memberSearch);
 
-        List<MemberResultDto> resultDtos = members.stream().map(m -> new MemberResultDto(m.getName(), m.getJoinDate())).collect(Collectors.toList());
+        List<MemberResultDto> result = members.stream().map(m -> new MemberResultDto(m.getId(), m.getNickname(),m.getEmail())).collect(Collectors.toList());
 
-        return new Result(resultDtos.size(), resultDtos);
+        return new Result(result.size(), result);
     }
 
     @PostMapping("/members")
-    public ResponseEntity createMember(@RequestBody MemberForm memberForm) { // *** json stringify로 보내고 RequestBody!!
+    public ResponseEntity createMember(@RequestBody MemberForm memberForm) { // *** client에서 json stringify로 보내고 server에서 RequestBody로 받음
         Member member = new Member();
         member.setId(memberForm.getId());
-        member.setName(memberForm.getName());
         member.setNickname(memberForm.getNickname());
         member.setEmail(memberForm.getEmail());
 

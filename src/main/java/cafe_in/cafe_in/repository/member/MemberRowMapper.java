@@ -16,7 +16,6 @@ public class MemberRowMapper implements RowMapper<Member> {
     public Member mapRow(ResultSet rs, int rowNum) throws SQLException {
         Member member = new Member();
         member.setId(rs.getLong("ID"));
-        member.setName(rs.getString("NAME"));
         member.setNickname(rs.getString("NICKNAME"));
         member.setEmail(rs.getString("EMAIL"));
         member.setJoinDate(rs.getTimestamp("JOINDATE").toLocalDateTime());
