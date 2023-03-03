@@ -7,9 +7,7 @@ import cafe_in.cafe_in.exception.MemberNotFoundException;
 import cafe_in.cafe_in.repository.member.MemberSearch;
 import cafe_in.cafe_in.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,7 +63,8 @@ public class MemberController {
         return memberService.deleteMember(id);
     }
 
-    @Data
+    @Getter
+    @Setter
     @AllArgsConstructor
     static class Result<T> {
         private int count;

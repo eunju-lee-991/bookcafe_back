@@ -6,6 +6,7 @@ import cafe_in.cafe_in.exception.MemberNotFoundException;
 import cafe_in.cafe_in.repository.member.MemberRepository;
 import cafe_in.cafe_in.repository.member.MemberRepositoryImpl;
 import cafe_in.cafe_in.repository.member.MemberSearch;
+import cafe_in.cafe_in.repository.member.MemberSearchOrder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,10 @@ public class MemberService {
     }
 
     public List<Member> findMembersByCriteria(MemberSearch memberSearch){
+        if (memberSearch.getOrder() == null) { // 순서 설정이 없을 경우 기본으로 ID 순서로 세팅
+            memberSearch.setOrder(MemberSearchOrder.ID);
+        }
+
         return memberRepository.findMembersByCriteria(memberSearch);
     }
 

@@ -112,7 +112,7 @@ public class LoginController {
 
 
     @GetMapping("/logout")
-    private String logout(HttpServletRequest request) throws IOException {
+    private String logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Cookie[] cookies = request.getCookies();
         boolean isValidJsessionid = false;
@@ -120,22 +120,27 @@ public class LoginController {
         if (cookies != null && session != null) {
             Optional<Cookie> jsessionCookie = Arrays.stream(cookies).filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst();
             if (jsessionCookie.isPresent()) {
-                isValidJsessionid = jsessionCookie.get().getValue().equals(session.getId());
+                Cookie jCookie = jsessionCookie.get();
+                isValidJsessionid = jCookie.getValue().equals(session.getId()); // check if the Jsessionid cookie value equals session id
+
+                if (isValidJsessionid) {
+                    String access_token = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
+                    // kakao Logout
+                    Long logout = kakaoLogout(access_token);
+                    // delete session
+                    session.invalidate();
+                    // delete JSESSIONID cookie
+
+                } else { // not valid JSESSIONID
+                    // ..Exception or Error
+                }
+                // JSESSIONID는 HttpOnly여서 cliend side에서 수정x 서버에서 지워줘야함
+                jCookie.setMaxAge(0);
+                response.addCookie(jCookie);
             }
         } else {
             log.info("cookie or session is null");
         }
-
-        if (isValidJsessionid) {
-            String access_token = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
-            // 카카오 로그아웃
-            Long logout = kakaoLogout(access_token);
-            // 세션 삭제
-            session.invalidate();
-        } else { // not valid JSESSIONID
-            // ..Exception or Error
-        }
-
         return "카카오 로그아웃 및 세션 삭제 완료. 리턴값 나중에 수정";
     }
 
@@ -167,6 +172,7 @@ public class LoginController {
             log.info("code : {}, msg : {} ", code, msg);
 
             // exception 만들어서 처리!!!!!!!!!!!! NotValidTokenException
+
             throw new RuntimeException(msg);
 
         }
@@ -343,7 +349,8 @@ public class LoginController {
         return connection;
     }
 
-    @Data
+    @Getter
+    @Setter
     @AllArgsConstructor
     static class Result<Member> {
         private boolean isNewMember;

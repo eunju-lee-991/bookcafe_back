@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -33,8 +34,7 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     public Optional<Member> findOne(Long id) {
-        List<Member> query = null;
-                String findOneSql = MemberSql.SELECT_MEMBER + MemberSql.WHERE_ID;
+        String findOneSql = MemberSql.SELECT_MEMBER + MemberSql.WHERE_ID;
         SqlParameterSource param = new MapSqlParameterSource("id", id);
 
         /*  Member member = namedParameterJdbcTemplate.queryForObject(MemberSql.SELECT_MEMBER_BY_ID, param, Member.class); 를 사용하지 않고 List 타입으로 반환하는 .query를 쓰는 이유
@@ -52,9 +52,6 @@ public class MemberRepositoryImpl implements MemberRepository {
         String findMembersByCriteriaSql = MemberSql.SELECT_MEMBER;
         MemberSearchForParameter param = new MemberSearchForParameter();
 
-        if (memberSearch.getOrder() == null) { // 순서 설정이 없을 경우 기본으로 ID 순서로 세팅
-            memberSearch.setOrder(MemberSearchOrder.ID);
-        }
         param.setOrder(memberSearch.getOrder().ordinal() + 1); //order by 할 때는 컬럼 순서를 넣어줘야해서 MemberSearchOrder를 숫자로 변경
 
         log.info("orderBy: {}, {}번째 컬럼", memberSearch.getOrder(), memberSearch.getOrder().ordinal() + 1);
@@ -71,9 +68,9 @@ public class MemberRepositoryImpl implements MemberRepository {
 
         findMembersByCriteriaSql += MemberSql.ORDER_BY;
 
-        BeanPropertySqlParameterSource beanPropertySqlParameterSource = new BeanPropertySqlParameterSource(param);
+        BeanPropertySqlParameterSource beanParam = new BeanPropertySqlParameterSource(param);
 
-        return namedParameterJdbcTemplate.query(findMembersByCriteriaSql, beanPropertySqlParameterSource, memberRowMapper);
+        return namedParameterJdbcTemplate.query(findMembersByCriteriaSql, beanParam, memberRowMapper);
     }
 
     public int deleteOne(Long id) {
