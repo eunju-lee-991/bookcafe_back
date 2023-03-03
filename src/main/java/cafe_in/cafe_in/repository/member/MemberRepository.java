@@ -1,8 +1,6 @@
 package cafe_in.cafe_in.repository.member;
 
 import cafe_in.cafe_in.domain.Member;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 

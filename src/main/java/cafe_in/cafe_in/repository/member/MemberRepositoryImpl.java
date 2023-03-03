@@ -33,13 +33,15 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     public Optional<Member> findOne(Long id) {
-        String findOneSql = MemberSql.SELECT_MEMBER + MemberSql.WHERE_ID;
+        List<Member> query = null;
+                String findOneSql = MemberSql.SELECT_MEMBER + MemberSql.WHERE_ID;
         SqlParameterSource param = new MapSqlParameterSource("id", id);
 
         /*  Member member = namedParameterJdbcTemplate.queryForObject(MemberSql.SELECT_MEMBER_BY_ID, param, Member.class); 를 사용하지 않고 List 타입으로 반환하는 .query를 쓰는 이유
         queryForObject는 하나의 행이 반환되지 않는 경우(id에 해당하는 로우가 없는 경우) 예외가 발생
         그냥 .query 실행해서 list로 가져와서 uniqueResult 처리 */
         return Optional.ofNullable(DataAccessUtils.uniqueResult(namedParameterJdbcTemplate.query(findOneSql, param, memberRowMapper)));
+        //DataAccessUtils.uniqueResult를 사용하면 결과가 0일 때 null로 만들어주기 때문에 optional로 감싸줌
     }
 
     public List<Member> findMembers() {
@@ -73,6 +75,7 @@ public class MemberRepositoryImpl implements MemberRepository {
 
         return namedParameterJdbcTemplate.query(findMembersByCriteriaSql, beanPropertySqlParameterSource, memberRowMapper);
     }
+
     public int deleteOne(Long id) {
         SqlParameterSource param = new MapSqlParameterSource("id", id);
 

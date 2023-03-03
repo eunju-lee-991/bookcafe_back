@@ -37,6 +37,11 @@ public class MemberController {
         List<Member> members
                 = memberSearch == null ? memberService.findMembers() : memberService.findMembersByCriteria(memberSearch);
 
+        if(members == null){
+            System.out.println("null");
+        }else {
+            System.out.println("not nulll");
+        }
         List<MemberResultDto> result = members.stream().map(m -> new MemberResultDto(m.getId(), m.getNickname(),m.getEmail())).collect(Collectors.toList());
 
         return new Result(result.size(), result);
