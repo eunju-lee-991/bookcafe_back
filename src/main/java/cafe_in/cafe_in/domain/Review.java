@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Review {
-    Long reviewId;
-    Long memberId;
-    String title;
-    String contents;
-    Long isbn;
-    String bookTitle;
-    LocalDateTime createdDate;
-    LocalDateTime updatedDate;
+    private Long reviewId;
+    private Long memberId;
+    private String title;
+    private String contents;
+    private Long isbn;
+    private String bookTitle;
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
 }

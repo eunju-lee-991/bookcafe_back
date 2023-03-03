@@ -1,22 +1,19 @@
 package cafe_in.cafe_in.controller;
 
 import cafe_in.cafe_in.domain.Review;
-import cafe_in.cafe_in.dto.ReviewForm;
-import cafe_in.cafe_in.repository.review.ReviewRepositoryImpl;
+import cafe_in.cafe_in.dto.review.*;
 import cafe_in.cafe_in.repository.review.ReviewSearch;
-import cafe_in.cafe_in.repository.review.ReviewSearchOrder;
-import cafe_in.cafe_in.repository.review.ReviewSql;
-import cafe_in.cafe_in.service.MemberService;
 import cafe_in.cafe_in.service.ReviewService;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,7 +23,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping("/reviews")
-    public Long CreateReview(@RequestBody ReviewForm reviewForm){ // JSON key는 대소문자도 구분
+    public ResponseEntity CreateReview(@RequestBody ReviewForm reviewForm){ // JSON key는 대소문자도 구분
         Review review = new Review();
         review.setMemberId(reviewForm.getMemberId());
         review.setTitle(reviewForm.getTitle());
@@ -37,12 +34,12 @@ public class ReviewController {
         review.setUpdatedDate(review.getCreatedDate());
 
         // Long으로 id 넘겨서 client에서 다시 상세페이지로 갈 수 있도록하기. response로 id랑 또 뭐를 전달할지는 나중에 고민
-
-        return reviewService.createReview(review);
+        return ResponseEntity.status(HttpStatus.CREATED).body(review);
+        //return reviewService.createReview(review);
     }
 
     @GetMapping("/reviews")
-    public FindReviewResponse findReviews(@RequestBody(required = false) ReviewSearch reviewSearch){
+    public ReviewListResponse findReviews(@RequestBody(required = false) ReviewSearch reviewSearch){
         List<Review> reviews = null;
         int totalCount = 0;
 
@@ -52,25 +49,25 @@ public class ReviewController {
             reviews = reviewService.findReviews();
         }else {
             log.info("ReviewSearch not null");
-            if (reviewSearch.getOrder() == null) { // 순서 설정이 없을 경우 기본으로 REVIEWID order로 세팅
-                reviewSearch.setOrder(ReviewSearchOrder.REVIEWID);
-            }
-
-            if (reviewSearch.getLimit() == 0){
-                reviewSearch.setLimit(10); // limit 설정 안했을 경우 기본값 10
-            }
-
             totalCount = reviewService.getTotalCount(reviewSearch);
             reviews = reviewService.findReviewsByCriteria(reviewSearch);
         }
 
+        List<ReviewSimpleDto> reviewSimpleDtos = reviews.stream().map(review -> new ReviewSimpleDto(review.getReviewId(), review.getTitle(), review.getIsbn(), review.getBookTitle()
+                , review.getUpdatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))).collect(Collectors.toList());
 
-        return new FindReviewResponse(totalCount, reviews.size(), reviews);
+        return new ReviewListResponse(totalCount, reviews.size(), reviewSimpleDtos);
     }
 
     @GetMapping("/reviews/{reviewId}")
-    public Review findOneReview(@PathVariable("reviewId") Long reviewId){
-        return reviewService.findOneReview(reviewId);
+    public ReviewResponse findOneReview(@PathVariable("reviewId") Long reviewId){
+        Review review = reviewService.findOneReview(reviewId);
+        String createdDate = review.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+        String updatedDate = review.getUpdatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+        ReviewDetailDto dto = new ReviewDetailDto(review.getReviewId(), review.getMemberId(), review.getTitle(), review.getContents(), review.getIsbn(), review.getBookTitle()
+                , createdDate, updatedDate);
+
+        return new ReviewResponse(dto);
     }
 
     @PatchMapping("/reviews/{reviewId}")
@@ -89,22 +86,5 @@ public class ReviewController {
     @DeleteMapping("/reviews/{reviewId}")
     public Long delete(@PathVariable("reviewId") Long reviewId){
         return reviewService.deleteReview(reviewId);
-    }
-
-    class CreateReviewResponse {
-        Long id;
-    }
-
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    class FindReviewResponse {
-        int total_count;
-        int count;
-        List<Review> review;
-    }
-
-    class UpdateReviewResponse {
-
     }
 }

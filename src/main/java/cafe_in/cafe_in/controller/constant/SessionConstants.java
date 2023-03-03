@@ -1,4 +1,4 @@
-package cafe_in.cafe_in.controller.Login;
+package cafe_in.cafe_in.controller.constant;
 
 public class SessionConstants {
     public static final String LOGIN_MEMBER = "loginMember";

@@ -29,6 +29,7 @@ public class ReviewService {
     }
 
     public int getTotalCount(ReviewSearch reviewSearch){
+        setReviewSearch(reviewSearch);
 
         return reviewRepository.getTotalCount(reviewSearch);
     }
@@ -38,7 +39,7 @@ public class ReviewService {
     }
 
     public List<Review> findReviewsByCriteria(ReviewSearch reviewSearch) {
-
+        setReviewSearch(reviewSearch);
 
         return reviewRepository.findReviewsByCriteria(reviewSearch);
     }
@@ -62,6 +63,16 @@ public class ReviewService {
             return reviewId;
         }else {
             throw new RuntimeException("존재하지 않는 글번호입니다.");// Exception 만들어서 처리하기
+        }
+    }
+
+    private void setReviewSearch(ReviewSearch reviewSearch){
+        if (reviewSearch.getOrder() == null) { // 순서 설정이 없을 경우 기본으로 REVIEWID order로 세팅
+            reviewSearch.setOrder(ReviewSearchOrder.REVIEWID);
+        }
+
+        if (reviewSearch.getLimit() == 0){
+            reviewSearch.setLimit(10); // limit 설정 안했을 경우 기본값 10
         }
     }
 }

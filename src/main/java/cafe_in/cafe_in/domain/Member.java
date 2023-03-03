@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Member {
-    Long id;
-    String nickname;
-    String email;
-    LocalDateTime joinDate;
+    private Long id;
+    private String nickname;
+    private String email;
+    private LocalDateTime joinDate;
 }

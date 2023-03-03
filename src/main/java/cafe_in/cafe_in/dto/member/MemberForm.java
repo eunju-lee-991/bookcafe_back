@@ -1,17 +1,15 @@
-package cafe_in.cafe_in.dto;
+package cafe_in.cafe_in.dto.member;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.ibatis.annotations.ConstructorArgs;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@AllArgsConstructor
-public class MemberResultDto {
+public class MemberForm {
     private Long id;
+    private String name;
     private String nickname;
     private String email;
 }

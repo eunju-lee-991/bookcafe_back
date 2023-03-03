@@ -1,6 +1,10 @@
-package cafe_in.cafe_in.controller.Login;
+package cafe_in.cafe_in.controller;
 
+import cafe_in.cafe_in.controller.constant.KakaoApiConstants;
+import cafe_in.cafe_in.controller.constant.SessionConstants;
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.dto.member.LoginMemberResponse;
+import cafe_in.cafe_in.dto.member.MemberDto;
 import cafe_in.cafe_in.exception.AuthorizationCodeNotFoundException;
 import cafe_in.cafe_in.service.MemberService;
 import lombok.*;
@@ -16,6 +20,7 @@ import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -40,11 +45,11 @@ public class LoginController {
      * 그래서 client server에서 인가코드 받고 백엔드로 넘겨준 후에 백엔드에서 토큰 발급/회원가입or로그인 처리하였음
      */
     @GetMapping("/api/login/token")
-    public Result login(@RequestParam String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public LoginMemberResponse login(@RequestParam String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorize_code = "";
         String access_token = "";
-        Member member = null; // REST API 답게 리턴하도록 수정
-        boolean isNewMember = false;
+        Member member = null;
+        boolean newMember = false;
 
         if (code != null) {
             authorize_code = code;
@@ -70,37 +75,14 @@ public class LoginController {
         } else {
             // 회원 아니면 회원가입
             member = join(memberInfo);
-            isNewMember = true;
+            newMember = true;
             log.info("회원가입");
         }
 
         // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
         login(request, response, member, access_token);
 
-        return new Result(isNewMember, member);
-    }
-
-    @GetMapping("/testCookie")
-    public void testCookie(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        boolean isValidJsessionid = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst().get().getValue().equals(session.getId());
-        if (isValidJsessionid) {
-            String jsessionid1 = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst().get().getValue();
-            log.info(jsessionid1);
-            log.info((String) session.getAttribute(SessionConstants.ACCESS_TOKEN));
-            Member member = (Member) session.getAttribute(SessionConstants.LOGIN_MEMBER);
-            log.info(member.getEmail());
-        } else {
-            String jsessionid2 = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst().get().getValue();
-            log.info("2222222" + jsessionid2);
-        }
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            Arrays.stream(cookies).forEach(cookie -> System.out.println(cookie.getName()));
-        } else {
-            System.out.println("no cookies");
-        }
-
+        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
     }
 
     private void login(HttpServletRequest request, HttpServletResponse response, Member member, String access_token) {
@@ -109,7 +91,6 @@ public class LoginController {
         session.setAttribute(SessionConstants.ACCESS_TOKEN, access_token);
         log.info(session.getId());
     }
-
 
     @GetMapping("/logout")
     private String logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -313,7 +294,6 @@ public class LoginController {
             Map<String, Object> map = jsonParser.parseMap(result);
             Long id = (Long) map.get("id");
 
-
             Map<String, Object> kakaoAccount = (Map<String, Object>) map.get("kakao_account");
             Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
             String nickname = (String) profile.get("nickname");
@@ -347,14 +327,6 @@ public class LoginController {
         connection.setDoOutput(doOutPut);
 
         return connection;
-    }
-
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    static class Result<Member> {
-        private boolean isNewMember;
-        private Member member;
     }
 
     @Getter
