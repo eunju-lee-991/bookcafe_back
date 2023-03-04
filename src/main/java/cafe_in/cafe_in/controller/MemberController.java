@@ -1,6 +1,7 @@
 package cafe_in.cafe_in.controller;
 
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.dto.member.DeleteMemberResponse;
 import cafe_in.cafe_in.dto.member.MemberForm;
 import cafe_in.cafe_in.dto.member.MemberDto;
 import cafe_in.cafe_in.dto.member.MemberListResponse;
@@ -33,12 +34,18 @@ public class MemberController {
         memberService.join(member);
         log.info("joined Id : {} ", member.getId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(member);
+        MemberDto dto = new MemberDto(member.getId(), member.getNickname(), member.getEmail()
+                , member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @GetMapping("/members/{id}")
-    public Member findOne(@PathVariable("id") Long id) {
-        return memberService.findOne(id);
+    public MemberDto findOne(@PathVariable("id") Long id) {
+        Member member = memberService.findOne(id);
+        MemberDto dto = new MemberDto(member.getId(), member.getNickname(), member.getEmail()
+                , member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")));
+        return dto;
     }
 
     @GetMapping("/members")
@@ -51,14 +58,16 @@ public class MemberController {
 //        }else {
 //            System.out.println("not nulll");
 //        }
-        List<MemberDto> result = members.stream().map(m -> new MemberDto(m.getId(), m.getNickname(),m.getEmail(), m.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))).collect(Collectors.toList());
+        List<MemberDto> result = members.stream().map(m -> new MemberDto(m.getId(), m.getNickname(),m.getEmail()
+                , m.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))).collect(Collectors.toList());
 
         return new MemberListResponse(result.size(), result);
     }
 
     @DeleteMapping("/members/{id}")
-    public int deleteMember(@PathVariable Long id) {
-        return memberService.deleteMember(id);
+    public DeleteMemberResponse deleteMember(@PathVariable Long id) {
+        memberService.deleteMember(id);
+        return new DeleteMemberResponse(id);
     }
 
 }

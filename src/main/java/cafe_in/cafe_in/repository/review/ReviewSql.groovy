@@ -11,12 +11,22 @@ class ReviewSql {
         WHERE 1=1
     """
 
+    public static final String SELECT_REVIEW_JOIN_MEMBER = """
+        SELECT A.ID, A.NICKNAME, A.EMAIL, A.JOINDATE,  
+               B.REVIEWID, B.TITLE, B.BOOKTITLE, B.CREATEDDATE, B.UPDATEDDATE, B.MEMBERID, B.CONTENTS, B.ISBN    
+        FROM MEMBER A, REVIEW B
+        WHERE A.ID = B.MEMBERID
+        AND B.REVIEWID = :reviewId
+    """
+
     public static final String SELECT_REVIEW_TOTAL_COUNT = """
         SELECT COUNT(REVIEWID) FROM REVIEW
         WHERE 1=1
     """
 
-    public static final String WHERE_REVIEWID= " AND REVIEWID = :reviewId"
+    public static final String WHERE_REVIEWID = " AND REVIEWID = :reviewId"
+
+    public static final String WHERE_MEMBERID = " AND MEMBERID = :memberId"
 
     public static final String WHERE_TITLE= " AND TITLE LIKE :title";
 

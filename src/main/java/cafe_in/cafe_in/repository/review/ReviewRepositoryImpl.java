@@ -23,6 +23,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final ReviewRowMapper reviewRowMapper; // SELECT해서 Mapping할 때 select한 컬럼과 mapper가 매핑하는 컬럼 일치해야함
 
+
     @Override
     public Long createReview(Review review) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -51,7 +52,6 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         return namedParameterJdbcTemplate.queryForObject(sql.toString()
                 , beanPropertySqlParameterSource, Integer.class);
     }
-
 
     @Override
     public List<Review> findReviews() {
@@ -88,6 +88,11 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         param.setOffset(reviewSearch.getOffset());
         param.setLimit(reviewSearch.getLimit());
 
+        //memberId
+        if(reviewSearch.getMemberId() != null){
+            sql.append(ReviewSql.WHERE_MEMBERID);
+            param.setMemberId(reviewSearch.getMemberId());
+        }
         //title
         if(reviewSearch.getTitle() != null){
             sql.append(ReviewSql.WHERE_TITLE);
@@ -110,6 +115,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
     @Getter
     @Setter
     class ReviewSearchForParameter {
+        String memberId;
         String title;
         String contents;
         String bookTitle;

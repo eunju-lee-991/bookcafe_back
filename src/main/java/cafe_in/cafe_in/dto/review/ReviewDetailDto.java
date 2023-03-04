@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class ReviewDetailDto {
     Long reviewId;
     Long memberId;
+    String nickname;
     String title;
     String contents;
     Long isbn;

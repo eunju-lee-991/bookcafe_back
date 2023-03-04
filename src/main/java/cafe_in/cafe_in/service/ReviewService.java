@@ -18,8 +18,6 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
 
     public Long createReview(Review review) {
-
-
         return reviewRepository.createReview(review);
     }
 

@@ -1,11 +1,14 @@
 package cafe_in.cafe_in.controller;
 
+import cafe_in.cafe_in.domain.Member;
 import cafe_in.cafe_in.domain.Review;
 import cafe_in.cafe_in.dto.review.*;
 import cafe_in.cafe_in.repository.review.ReviewSearch;
+import cafe_in.cafe_in.service.MemberService;
 import cafe_in.cafe_in.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final MemberService memberService;
 
     @PostMapping("/reviews")
     public ResponseEntity CreateReview(@RequestBody ReviewForm reviewForm){ // JSON key는 대소문자도 구분
@@ -32,10 +36,8 @@ public class ReviewController {
         review.setBookTitle(reviewForm.getBookTitle());
         review.setCreatedDate(LocalDateTime.now());
         review.setUpdatedDate(review.getCreatedDate());
-
-        // Long으로 id 넘겨서 client에서 다시 상세페이지로 갈 수 있도록하기. response로 id랑 또 뭐를 전달할지는 나중에 고민
-        return ResponseEntity.status(HttpStatus.CREATED).body(review);
-        //return reviewService.createReview(review);
+        Long reviewId = reviewService.createReview(review);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new PostReviewResponse(reviewId));
     }
 
     @GetMapping("/reviews")
@@ -64,14 +66,18 @@ public class ReviewController {
         Review review = reviewService.findOneReview(reviewId);
         String createdDate = review.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
         String updatedDate = review.getUpdatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
-        ReviewDetailDto dto = new ReviewDetailDto(review.getReviewId(), review.getMemberId(), review.getTitle(), review.getContents(), review.getIsbn(), review.getBookTitle()
-                , createdDate, updatedDate);
+
+        // namedParameterJdbcTemplate.query() 에서는 rowMapper를 2개 이상 전달할 수 없어서 join 쿼리 사용하지 않고 따로 서비스 호출해서 member 정보 불러왔음
+        // dto 생성해서 처리하는 게 나을지 고민
+        Member member = memberService.findOne(review.getMemberId());
+        ReviewDetailDto dto = new ReviewDetailDto(review.getReviewId(), review.getMemberId(), member.getNickname(), review.getTitle()
+                , review.getContents(), review.getIsbn(), review.getBookTitle() , createdDate, updatedDate);
 
         return new ReviewResponse(dto);
     }
 
     @PatchMapping("/reviews/{reviewId}")
-    public Long updateReview(@PathVariable("reviewId") Long reviewId, @RequestBody ReviewForm reviewForm){
+    public UpdateReviewResponse updateReview(@PathVariable("reviewId") Long reviewId, @RequestBody ReviewForm reviewForm){
         Review review = new Review();
         review.setReviewId(reviewId);
         review.setTitle(reviewForm.getTitle());
@@ -80,11 +86,11 @@ public class ReviewController {
 
         // Long으로 id 넘겨서 client에서 다시 상세페이지로 갈 수 있도록하기. id랑 status?또 뭐를 전달할지는 나중에 고민
 
-        return reviewService.updateReview(review);
+        return new UpdateReviewResponse(reviewService.updateReview(review));
     }
 
     @DeleteMapping("/reviews/{reviewId}")
-    public Long delete(@PathVariable("reviewId") Long reviewId){
-        return reviewService.deleteReview(reviewId);
+    public DeleteReviewReponse delete(@PathVariable("reviewId") Long reviewId){
+        return new DeleteReviewReponse(reviewService.deleteReview(reviewId));
     }
 }

@@ -10,7 +10,7 @@ class MemberSql {
     // 파라미터는 대소문자 구분해야한다!
 
     public static final String SELECT_MEMBER = """
-        SELECT ID,  NICKNAME, EMAIL, JOINDATE FROM MEMBER
+        SELECT ID, NICKNAME, EMAIL, JOINDATE FROM MEMBER
         WHERE 1=1
     """
 

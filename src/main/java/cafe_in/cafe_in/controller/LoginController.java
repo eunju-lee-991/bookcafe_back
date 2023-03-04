@@ -263,7 +263,6 @@ public class LoginController {
     }
 
     private KakaoMemberInfo getKakaoUserInfo(String access_token) throws IOException {
-
         KakaoMemberInfo kakaoMemberInfo = null;
 
         String[] propertyKeys = {"kakao_account.profile", "kakao_account.name", "kakao_account.email", "kakao_account.age_range", "kakao_account.birthday", "kakao_account.gender"};

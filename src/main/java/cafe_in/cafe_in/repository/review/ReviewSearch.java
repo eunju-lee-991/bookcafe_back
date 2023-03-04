@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReviewSearch {
+    String memberId;
     String title;
     String contents;
     String bookTitle;
