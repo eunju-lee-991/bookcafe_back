@@ -12,6 +12,6 @@ public class ReviewSearch {
     String bookTitle;
     //String nickname; // nickname으로 memberId 찾아서 찾아오기 나중에
     ReviewSearchOrder order;
-    int offset;
-    int limit;
+    int page;
+    int size;
 }

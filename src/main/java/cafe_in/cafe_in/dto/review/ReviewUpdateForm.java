@@ -5,10 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ReviewForm {
-    Long memberId;
+public class ReviewUpdateForm {
     String title;
     String contents;
-    Long isbn;
-    String bookTitle;
 }

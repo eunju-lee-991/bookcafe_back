@@ -7,10 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class MemberDto {
+public class UpdateMemberResponse {
     private Long id;
-    private String nickname;
-    private String email;
-    private String profileImageUrl;
-    private String joinDate;
 }

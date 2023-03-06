@@ -5,6 +5,7 @@ create table member (
     id bigint auto_increment,
     nickname varchar(255),
     email varchar(255),
+    profileImageUrl varchar(500),
     joindate timestamp DEFAULT CURRENT_TIMESTAMP,
     primary key (id)
 );

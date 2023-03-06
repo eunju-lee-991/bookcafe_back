@@ -1,6 +1,7 @@
 package cafe_in.cafe_in.repository.review;
 
 import cafe_in.cafe_in.domain.Review;
+import cafe_in.cafe_in.dto.review.ReviewDetailDto;
 import cafe_in.cafe_in.repository.member.MemberSql;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ import java.util.Optional;
 public class ReviewRepositoryImpl implements ReviewRepository {
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final ReviewRowMapper reviewRowMapper; // SELECT해서 Mapping할 때 select한 컬럼과 mapper가 매핑하는 컬럼 일치해야함
-
+    private final ReviewDetailDtoRowMapper reviewDetailDtoRowMapper;
 
     @Override
     public Long createReview(Review review) {
@@ -31,12 +32,19 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         return (Long) keyHolder.getKeys().get("REVIEWID");
     }
 
-    @Override
-    public Optional<Review> findOneReview(Long reviewId) {
-        String findOneReviewSql = ReviewSql.SELECT_REVIEW + ReviewSql.WHERE_REVIEWID;
+    public int getReviewIdCount(Long reviewId){
+        String findOneCountSql = ReviewSql.SELECT_REVIEW_TOTAL_COUNT + ReviewSql.WHERE_REVIEWID;
         SqlParameterSource param = new MapSqlParameterSource("reviewId", reviewId);
 
-        return Optional.ofNullable(DataAccessUtils.uniqueResult(namedParameterJdbcTemplate.query(findOneReviewSql, param, reviewRowMapper)));
+        return namedParameterJdbcTemplate.queryForObject(findOneCountSql, param, Integer.class);
+    }
+
+    @Override
+    public Optional<ReviewDetailDto> findOneReview(Long reviewId) {
+        String findOneReviewSql = ReviewSql.SELECT_REVIEW_JOIN_MEMBER; //ReviewSql.SELECT_REVIEW + ReviewSql.WHERE_REVIEWID;
+        SqlParameterSource param = new MapSqlParameterSource("reviewId", reviewId);
+
+        return Optional.ofNullable(DataAccessUtils.uniqueResult(namedParameterJdbcTemplate.query(findOneReviewSql, param, reviewDetailDtoRowMapper)));
     }
 
     public int getTotalCount(){
@@ -85,8 +93,10 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         ReviewSearchForParameter param = new ReviewSearchForParameter();
 
         param.setOrder(reviewSearch.getOrder().ordinal()+1);
-        param.setOffset(reviewSearch.getOffset());
-        param.setLimit(reviewSearch.getLimit());
+        param.setLimit(reviewSearch.getSize());
+
+
+        param.setOffset(reviewSearch.getSize() * reviewSearch.getPage());
 
         //memberId
         if(reviewSearch.getMemberId() != null){

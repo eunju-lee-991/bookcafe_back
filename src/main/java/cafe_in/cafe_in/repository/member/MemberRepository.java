@@ -11,4 +11,5 @@ public interface MemberRepository {
     public List<Member> findMembersByCriteria(MemberSearch memberSearch);
     public Optional<Member> findOne(Long id);
     public int deleteOne(Long id);
+    int updateMember(Member member);
 }

@@ -12,7 +12,7 @@ class ReviewSql {
     """
 
     public static final String SELECT_REVIEW_JOIN_MEMBER = """
-        SELECT A.ID, A.NICKNAME, A.EMAIL, A.JOINDATE,  
+        SELECT A.NICKNAME,
                B.REVIEWID, B.TITLE, B.BOOKTITLE, B.CREATEDDATE, B.UPDATEDDATE, B.MEMBERID, B.CONTENTS, B.ISBN    
         FROM MEMBER A, REVIEW B
         WHERE A.ID = B.MEMBERID
@@ -38,7 +38,7 @@ class ReviewSql {
 
     public static final String UPDATE_REVIEW = """
         UPDATE REVIEW
-        SET TITLE = :title, CONTENTS = :contents
+        SET TITLE = :title, CONTENTS = :contents, UPDATEDDATE = :updatedDate
         WHERE REVIEWID = :reviewId
     """
     public static final String DELETE_REVIEW = """

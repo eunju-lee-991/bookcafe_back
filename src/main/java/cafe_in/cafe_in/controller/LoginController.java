@@ -82,7 +82,7 @@ public class LoginController {
         // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
         login(request, response, member, access_token);
 
-        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
+        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(),member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
     }
 
     private void login(HttpServletRequest request, HttpServletResponse response, Member member, String access_token) {
@@ -121,6 +121,9 @@ public class LoginController {
             }
         } else {
             log.info("cookie or session is null");
+            if(session != null){
+                session.invalidate();
+            }
         }
         return "카카오 로그아웃 및 세션 삭제 완료. 리턴값 나중에 수정";
     }
@@ -166,6 +169,7 @@ public class LoginController {
         member.setId(memberInfo.getKakaoMemberId());
         member.setNickname(memberInfo.getNickname());
         member.setEmail(memberInfo.getEmail());
+        member.setProfileImageUrl(memberInfo.getProfileImageUrl());
         memberService.join(member);
 
         return member;
@@ -297,11 +301,13 @@ public class LoginController {
             Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
             String nickname = (String) profile.get("nickname");
             String email = (String) kakaoAccount.get("email");
+            String profileImageUrl = (String) profile.get("profile_image_url");
 
             kakaoMemberInfo = new KakaoMemberInfo();
             kakaoMemberInfo.setKakaoMemberId(id);
             kakaoMemberInfo.setNickname(nickname);
             kakaoMemberInfo.setEmail(email);
+            kakaoMemberInfo.setProfileImageUrl(profileImageUrl);
         }
 
         return kakaoMemberInfo;
@@ -334,5 +340,6 @@ public class LoginController {
         private Long kakaoMemberId;
         private String nickname;
         private String email;
+        private String profileImageUrl;
     }
 }

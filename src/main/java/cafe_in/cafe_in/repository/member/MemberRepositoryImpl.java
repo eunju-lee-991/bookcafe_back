@@ -1,6 +1,7 @@
 package cafe_in.cafe_in.repository.member;
 
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.repository.review.ReviewSql;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +72,11 @@ public class MemberRepositoryImpl implements MemberRepository {
         BeanPropertySqlParameterSource beanParam = new BeanPropertySqlParameterSource(param);
 
         return namedParameterJdbcTemplate.query(findMembersByCriteriaSql, beanParam, memberRowMapper);
+    }
+
+    @Override
+    public int updateMember(Member member) {
+        return namedParameterJdbcTemplate.update(MemberSql.UPDATE_MEMBER, new BeanPropertySqlParameterSource(member));
     }
 
     public int deleteOne(Long id) {

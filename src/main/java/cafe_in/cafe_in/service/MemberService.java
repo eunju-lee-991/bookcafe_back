@@ -53,8 +53,26 @@ public class MemberService {
         return memberRepository.findMembersByCriteria(memberSearch);
     }
 
-    public int deleteMember(Long id) {
-        //delete도 notfound 예외
-        return memberRepository.deleteOne(id);
+    public Long updateMember(Member member) {
+        if(!isExistingMember(member.getId())){
+            throw new MemberNotFoundException("존재하지 않는 회원입니다");
+        }
+
+        if(memberRepository.updateMember(member) != 0){
+            return member.getId();
+        }else {
+            throw new RuntimeException("회원정보 수정에 실패하였습니다.");
+        }
+    }
+
+    public Long deleteMember(Long id) {
+        if(!isExistingMember(id)){
+            throw new MemberNotFoundException("존재하지 않는 회원입니다");
+        }
+        if(memberRepository.deleteOne(id) != 0){
+            return id;
+        }else {
+            throw new RuntimeException("회원정보 삭제에 실패하였습니다.");
+        }
     }
 }

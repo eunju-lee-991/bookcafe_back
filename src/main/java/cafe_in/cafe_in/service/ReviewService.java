@@ -1,6 +1,8 @@
 package cafe_in.cafe_in.service;
 
 import cafe_in.cafe_in.domain.Review;
+import cafe_in.cafe_in.dto.review.ReviewDetailDto;
+import cafe_in.cafe_in.exception.ReviewNotFoundException;
 import cafe_in.cafe_in.repository.member.MemberSearchOrder;
 import cafe_in.cafe_in.repository.review.ReviewRepository;
 import cafe_in.cafe_in.repository.review.ReviewSearch;
@@ -42,25 +44,36 @@ public class ReviewService {
         return reviewRepository.findReviewsByCriteria(reviewSearch);
     }
 
-    public Review findOneReview(Long id) {
+    public ReviewDetailDto findOneReview(Long id) {
 
         // Exception 만들어서 처리하기
-        return reviewRepository.findOneReview(id).orElseThrow(() -> new RuntimeException("존재하지 않는 글번호입니다."));
+        return reviewRepository.findOneReview(id).orElseThrow(() -> new RuntimeException("존재하지 않는 회원 혹은 글번호입니다."));
     }
 
     public Long updateReview(Review review) {
+        checkExistence(review.getReviewId());
+
         if(reviewRepository.updateReview(review) != 0){
             return review.getReviewId();
         }else {
-            throw new RuntimeException("존재하지 않는 글번호입니다.");// Exception 만들어서 처리하기
+            throw new RuntimeException("리뷰 수정에 실패하였습니다.");
         }
     }
 
     public Long deleteReview(Long reviewId) {
+        checkExistence(reviewId);
+
         if(reviewRepository.deleteReview(reviewId) != 0){
             return reviewId;
         }else {
-            throw new RuntimeException("존재하지 않는 글번호입니다.");// Exception 만들어서 처리하기
+            throw new RuntimeException("리뷰 삭제에 실패하였습니다.");
+        }
+    }
+
+    private void checkExistence(Long reviewId) {
+        int result = reviewRepository.getReviewIdCount(reviewId);
+        if(result < 1){
+            throw new ReviewNotFoundException("존재하지 않는 글번호입니다.");
         }
     }
 
@@ -69,8 +82,8 @@ public class ReviewService {
             reviewSearch.setOrder(ReviewSearchOrder.REVIEWID);
         }
 
-        if (reviewSearch.getLimit() == 0){
-            reviewSearch.setLimit(10); // limit 설정 안했을 경우 기본값 10
+        if (reviewSearch.getSize() == 0){
+            reviewSearch.setSize(10); // 설정 안했을 경우 기본값 10
         }
     }
 }

@@ -16,6 +16,7 @@ public class MemberRowMapper implements RowMapper<Member> {
         member.setId(rs.getLong("id"));
         member.setNickname(rs.getString("nickname"));
         member.setEmail(rs.getString("email"));
+        member.setProfileImageUrl(rs.getString("profileImageUrl"));
         member.setJoinDate(rs.getTimestamp("joindate").toLocalDateTime());
 
         return member;

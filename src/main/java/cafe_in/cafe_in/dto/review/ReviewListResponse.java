@@ -11,6 +11,6 @@ import java.util.List;
 @AllArgsConstructor
 public class ReviewListResponse {
     private int total_count;
-    private int count;
+    private boolean isEnd;
     private List<ReviewSimpleDto> reviews;
 }
