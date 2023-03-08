@@ -6,11 +6,14 @@ import cafe_in.cafe_in.domain.Member;
 import cafe_in.cafe_in.dto.member.LoginMemberResponse;
 import cafe_in.cafe_in.dto.member.MemberDto;
 import cafe_in.cafe_in.exception.AuthorizationCodeNotFoundException;
+import cafe_in.cafe_in.exception.InvalidTokenException;
 import cafe_in.cafe_in.service.MemberService;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.json.JsonParser;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
@@ -82,7 +85,7 @@ public class LoginController {
         // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
         login(request, response, member, access_token);
 
-        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(),member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
+        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
     }
 
     private void login(HttpServletRequest request, HttpServletResponse response, Member member, String access_token) {
@@ -93,7 +96,7 @@ public class LoginController {
     }
 
     @GetMapping("/logout")
-    private String logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Cookie[] cookies = request.getCookies();
         boolean isValidJsessionid = false;
@@ -102,35 +105,35 @@ public class LoginController {
             Optional<Cookie> jsessionCookie = Arrays.stream(cookies).filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst();
             if (jsessionCookie.isPresent()) {
                 Cookie jCookie = jsessionCookie.get();
-                isValidJsessionid = jCookie.getValue().equals(session.getId()); // check if the Jsessionid cookie value equals session id
+                isValidJsessionid = jCookie.getValue().equals(session.getId()); // check whether the Jsessionid cookie value equals session id
 
                 if (isValidJsessionid) {
                     String access_token = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
                     // kakao Logout
-                    Long logout = kakaoLogout(access_token);
+                    Long loggedOutId = kakaoLogout(access_token);
                     // delete session
                     session.invalidate();
-                    // delete JSESSIONID cookie
 
-                } else { // not valid JSESSIONID
-                    // ..Exception or Error
+                    log.info("LOGGED OUT: {}", loggedOutId);
                 }
                 // JSESSIONID는 HttpOnly여서 cliend side에서 수정x 서버에서 지워줘야함
+                // delete JSESSIONID cookie
                 jCookie.setMaxAge(0);
                 response.addCookie(jCookie);
             }
         } else {
             log.info("cookie or session is null");
-            if(session != null){
+            if (session != null) {
                 session.invalidate();
             }
         }
-        return "카카오 로그아웃 및 세션 삭제 완료. 리턴값 나중에 수정";
+        return ResponseEntity.noContent().build();
     }
 
     private Long kakaoLogout(String access_token) throws IOException {
-        Long loggedOutId = null;
+        validateToken(access_token);
 
+        Long loggedOutId = null;
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.LOGOUT_URL, "POST", false);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         connection.setRequestProperty("Authorization", "Bearer " + access_token);
@@ -144,7 +147,6 @@ public class LoginController {
             Map<String, Object> map = jsonParser.parseMap(result);
             loggedOutId = (Long) map.get("id");
 
-            log.info("LOGOUT id : {}", loggedOutId);
         } else { // responseCode not HTTP_OK
             String result = getResultString(connection.getErrorStream());
 
@@ -152,13 +154,9 @@ public class LoginController {
             Map<String, Object> map = jsonParser.parseMap(result);
             int code = (int) map.get("code");
             String msg = (String) map.get("msg");
-
-            log.info("code : {}, msg : {} ", code, msg);
-
-            // exception 만들어서 처리!!!!!!!!!!!! NotValidTokenException
+            log.info("error code : {}, msg : {} ", code, msg);
 
             throw new RuntimeException(msg);
-
         }
 
         return loggedOutId;
@@ -174,7 +172,6 @@ public class LoginController {
 
         return member;
     }
-
 
     private String getToken(String authorize_code) throws IOException {
         String access_token = "";
@@ -228,8 +225,15 @@ public class LoginController {
             log.error("error_code: {} ", error_code);
             log.error("error_Description: {} ", error_description);
 
-            throw new AuthorizationCodeNotFoundException(error_description);
+            if (error_code.equals("KOE320")) { // authorize_code not found
+                throw new AuthorizationCodeNotFoundException(error_description);
+            }else if(error_code.equals("KOE303")){ // Redirect URI mismatch.
+                throw new RuntimeException("Redirect URI mismatch");
+            }else if(error_code.equals("KOE101")){ // Not exist client_id
+                throw new RuntimeException("Not exist client_id");
+            }
         }
+
         return access_token;
     }
 
@@ -261,8 +265,11 @@ public class LoginController {
 
             log.info("code : {}, msg : {} ", code, msg);
 
-            // exception 만들어서 처리!!!!!!!!!!!! NotValidTokenException
-            throw new RuntimeException(msg);
+            if(code == -401){
+                throw new InvalidTokenException(msg, access_token);
+            }else {
+                throw new RuntimeException(msg);
+            }
         }
     }
 

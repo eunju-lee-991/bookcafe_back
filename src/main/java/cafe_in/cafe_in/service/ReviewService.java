@@ -45,9 +45,9 @@ public class ReviewService {
     }
 
     public ReviewDetailDto findOneReview(Long id) {
+        checkExistence(id);
 
-        // Exception 만들어서 처리하기
-        return reviewRepository.findOneReview(id).orElseThrow(() -> new RuntimeException("존재하지 않는 회원 혹은 글번호입니다."));
+        return reviewRepository.findOneReview(id).orElseThrow(() -> new RuntimeException("리뷰 조회에 실패하였습니다."));
     }
 
     public Long updateReview(Review review) {

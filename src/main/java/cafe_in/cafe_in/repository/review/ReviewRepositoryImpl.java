@@ -32,7 +32,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         return (Long) keyHolder.getKeys().get("REVIEWID");
     }
 
-    public int getReviewIdCount(Long reviewId){
+    public int getReviewIdCount(Long reviewId){ // 해당 번호의 리뷰가 존재하는지 체크하는 용도
         String findOneCountSql = ReviewSql.SELECT_REVIEW_TOTAL_COUNT + ReviewSql.WHERE_REVIEWID;
         SqlParameterSource param = new MapSqlParameterSource("reviewId", reviewId);
 
@@ -41,7 +41,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 
     @Override
     public Optional<ReviewDetailDto> findOneReview(Long reviewId) {
-        String findOneReviewSql = ReviewSql.SELECT_REVIEW_JOIN_MEMBER; //ReviewSql.SELECT_REVIEW + ReviewSql.WHERE_REVIEWID;
+        String findOneReviewSql = ReviewSql.SELECT_REVIEW_DETAIL; //ReviewSql.SELECT_REVIEW + ReviewSql.WHERE_REVIEWID;
         SqlParameterSource param = new MapSqlParameterSource("reviewId", reviewId);
 
         return Optional.ofNullable(DataAccessUtils.uniqueResult(namedParameterJdbcTemplate.query(findOneReviewSql, param, reviewDetailDtoRowMapper)));
@@ -74,6 +74,10 @@ public class ReviewRepositoryImpl implements ReviewRepository {
         BeanPropertySqlParameterSource beanPropertySqlParameterSource = setCriteriaParamAndSql(sql, reviewSearch);
 
         sql.append(ReviewSql.ORDER_BY);
+        if(reviewSearch.getOrder().equals(ReviewSearchOrder.CREATEDDATE) || reviewSearch.getOrder().equals(ReviewSearchOrder.UPDATEDDATE)){
+            sql.append("DESC");
+        }
+        sql.append(ReviewSql.LIMIT_OFFSET);
 
         return namedParameterJdbcTemplate.query(sql.toString(), beanPropertySqlParameterSource, reviewRowMapper);
     }
@@ -94,8 +98,6 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 
         param.setOrder(reviewSearch.getOrder().ordinal()+1);
         param.setLimit(reviewSearch.getSize());
-
-
         param.setOffset(reviewSearch.getSize() * reviewSearch.getPage());
 
         //memberId

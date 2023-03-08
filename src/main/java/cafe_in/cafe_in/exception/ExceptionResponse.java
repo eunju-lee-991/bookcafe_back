@@ -8,9 +8,7 @@ import java.util.Date;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-public class ExceptionResponse {
-    private Date timestamp;
+public class ExceptionResponse { //나중에 삭제
+    private int statusCode;
     private String message;
-    private String details;
 }

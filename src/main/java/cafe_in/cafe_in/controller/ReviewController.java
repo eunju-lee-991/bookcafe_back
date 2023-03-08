@@ -2,6 +2,7 @@ package cafe_in.cafe_in.controller;
 
 import cafe_in.cafe_in.domain.Review;
 import cafe_in.cafe_in.dto.review.*;
+import cafe_in.cafe_in.exception.BindingFieldFailException;
 import cafe_in.cafe_in.repository.review.ReviewSearch;
 import cafe_in.cafe_in.repository.review.ReviewSearchOrder;
 import cafe_in.cafe_in.service.MemberService;
@@ -10,8 +11,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -27,16 +30,22 @@ public class ReviewController {
     private final MemberService memberService;
 
     @PostMapping("/reviews")
-    public ResponseEntity CreateReview(@RequestBody ReviewPostForm reviewPostForm) { // JSON key는 대소문자도 구분
+    public ResponseEntity CreateReview(@Valid @RequestBody PostReviewForm postReviewForm, BindingResult bindingResult) { // JSON key는 대소문자도 구분
+        if(bindingResult.hasFieldErrors()){
+            throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
+        }
+
         Review review = new Review();
-        review.setMemberId(reviewPostForm.getMemberId());
-        review.setTitle(reviewPostForm.getTitle());
-        review.setContents(reviewPostForm.getContents());
-        review.setIsbn(reviewPostForm.getIsbn());
-        review.setBookTitle(reviewPostForm.getBookTitle());
+
+        review.setMemberId(postReviewForm.getMemberId());
+        review.setTitle(postReviewForm.getTitle());
+        review.setContents(postReviewForm.getContents());
+        review.setIsbn(postReviewForm.getIsbn());
+        review.setBookTitle(postReviewForm.getBookTitle());
         review.setCreatedDate(LocalDateTime.now());
         review.setUpdatedDate(review.getCreatedDate());
         Long reviewId = reviewService.createReview(review);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(new PostReviewResponse(reviewId));
     }
 
@@ -53,7 +62,6 @@ public class ReviewController {
             isEnd = true; // 회원 전체이기 때문에 isEnd = true
         } else {
             ReviewSearch reviewSearch = convertParamMapToReviewSearch(params);
-
             log.info("ReviewSearch not null");
             totalCount = reviewService.getTotalCount(reviewSearch);
             reviews = reviewService.findReviewsByCriteria(reviewSearch);
@@ -74,11 +82,15 @@ public class ReviewController {
     }
 
     @PatchMapping("/reviews/{reviewId}")
-    public UpdateReviewResponse updateReview(@PathVariable("reviewId") Long reviewId, @RequestBody ReviewUpdateForm reviewUpdateForm) {
+    public UpdateReviewResponse updateReview(@PathVariable("reviewId") Long reviewId, @Valid @RequestBody UpdateReviewForm updateReviewForm, BindingResult bindingResult) {
+        if(bindingResult.hasFieldErrors()){
+            throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
+        }
+
         Review review = new Review();
         review.setReviewId(reviewId);
-        review.setTitle(reviewUpdateForm.getTitle());
-        review.setContents(reviewUpdateForm.getContents());
+        review.setTitle(updateReviewForm.getTitle());
+        review.setContents(updateReviewForm.getContents());
         review.setUpdatedDate(LocalDateTime.now());
 
         return new UpdateReviewResponse(reviewService.updateReview(review));

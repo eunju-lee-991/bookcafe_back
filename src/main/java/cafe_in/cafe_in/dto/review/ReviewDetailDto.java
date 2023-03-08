@@ -19,6 +19,7 @@ public class ReviewDetailDto {
     String contents;
     Long isbn;
     String bookTitle;
+    Long likeCount;
     String createdDate;
     String updatedDate;
 }

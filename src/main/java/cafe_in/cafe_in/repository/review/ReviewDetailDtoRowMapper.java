@@ -21,6 +21,7 @@ public class ReviewDetailDtoRowMapper implements RowMapper<ReviewDetailDto> {
         reviewDetailDto.setContents(rs.getString("contents"));
         reviewDetailDto.setIsbn(rs.getLong("isbn"));
         reviewDetailDto.setBookTitle(rs.getString("booktitle"));
+        reviewDetailDto.setLikeCount(rs.getLong("likeCount"));
 
         String createdDate = rs.getTimestamp("createddate").toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
         String updatedDate = rs.getTimestamp("updateddate").toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
