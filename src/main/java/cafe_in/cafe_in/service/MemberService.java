@@ -28,12 +28,11 @@ public class MemberService {
 
     public Long join(Member member){
         if(isExistingMember(member.getId())){
-            throw new DuplicateUserException(String.format("이미 존재하는 회원입니다. ID : %s ", member.getId()));
+            throw new DuplicateUserException(String.format("이미 존재하는 회원입니다. ID : %s "
+                    , member.getId()));
         }
-
         member.setJoinDate(LocalDateTime.now());
         memberRepository.join(member);
-
         return member.getId();
     }
 

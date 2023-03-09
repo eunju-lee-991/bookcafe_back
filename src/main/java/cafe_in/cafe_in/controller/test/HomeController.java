@@ -1,4 +1,4 @@
-package cafe_in.cafe_in.controller;
+package cafe_in.cafe_in.controller.test;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;

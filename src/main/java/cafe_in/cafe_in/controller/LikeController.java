@@ -25,31 +25,30 @@ public class LikeController {
     private final LikeService likeService;
 
     @PostMapping("/likes")
-    public ResponseEntity createLike(@RequestBody @Valid PostLikeForm postLikeForm, BindingResult bindingResult){
-        if(bindingResult.hasFieldErrors()){
+    public ResponseEntity createLike(@RequestBody @Valid PostLikeForm postLikeForm, BindingResult bindingResult) {
+        if (bindingResult.hasFieldErrors()) {
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
         }
-
         Long createdLikeid = null;
         Like like = new Like();
         like.setReviewId(postLikeForm.getReviewId());
         like.setMemberId(postLikeForm.getMemberId());
 
-            createdLikeid = likeService.createLike(like);
-
+        createdLikeid = likeService.createLike(like);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new PostLikeResponse(createdLikeid));
     }
 
     @GetMapping("/likes")
-    public LikeResponse findLike(@RequestParam Long reviewId, @RequestParam Long memberId){
+    public LikeResponse findLike(@RequestParam Long reviewId, @RequestParam Long memberId) {
         LikeResponse response = new LikeResponse();
-        if(likeService.findLike(reviewId, memberId).isPresent()){
+
+        if (likeService.findLike(reviewId, memberId).isPresent()) {
             Like like = likeService.findLike(reviewId, memberId).get();
             response.setLikeId(like.getLikeId());
             response.setClickDate(like.getClickDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")));
             response.setClicked(true);
-        }else {
+        } else {
             response.setLikeId(null);
             response.setClickDate(null);
             response.setClicked(false);
@@ -60,7 +59,7 @@ public class LikeController {
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/likes/{likeId}")
-    public void deleteLike(@PathVariable Long likeId){
+    public void deleteLike(@PathVariable Long likeId) {
         likeService.deleteLike(likeId);
     }
 }

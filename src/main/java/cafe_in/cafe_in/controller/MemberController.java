@@ -25,7 +25,7 @@ public class MemberController {
     private final MemberService memberService;
 
     @PostMapping("/members")
-    public ResponseEntity createMember(@Valid @RequestBody PostMemberForm postMemberForm, BindingResult bindingResult) { // *** client에서 json stringify로 보내고 server에서 RequestBody로 받음
+    public ResponseEntity createMember(@Valid @RequestBody PostMemberForm postMemberForm, BindingResult bindingResult) {
         if(bindingResult.hasFieldErrors()){
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
         }
@@ -78,6 +78,7 @@ public class MemberController {
 
         return new UpdateMemberResponse(updatedId);
     }
+
     @DeleteMapping("/members/{id}")
     public DeleteMemberResponse deleteMember(@PathVariable Long id) {
         Long deletedId = memberService.deleteMember(id);

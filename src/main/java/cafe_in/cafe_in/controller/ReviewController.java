@@ -71,7 +71,7 @@ public class ReviewController {
         List<ReviewSimpleDto> reviewSimpleDtos = reviews.stream().map(review -> new ReviewSimpleDto(review.getReviewId(), review.getTitle(), review.getIsbn(), review.getBookTitle()
                 , review.getUpdatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))).collect(Collectors.toList());
 
-        return new ReviewListResponse(totalCount, isEnd, reviewSimpleDtos); //전체 게시물 count, offset&limit 적용 후 count , dto
+        return new ReviewListResponse(totalCount, isEnd, reviewSimpleDtos);  // 나중에 count랑 리뷰 데이터 가져오는 거 따로 분리하기
     }
 
     @GetMapping("/reviews/{reviewId}")
@@ -82,7 +82,8 @@ public class ReviewController {
     }
 
     @PatchMapping("/reviews/{reviewId}")
-    public UpdateReviewResponse updateReview(@PathVariable("reviewId") Long reviewId, @Valid @RequestBody UpdateReviewForm updateReviewForm, BindingResult bindingResult) {
+    public UpdateReviewResponse updateReview(@PathVariable("reviewId") Long reviewId
+            , @Valid @RequestBody UpdateReviewForm updateReviewForm, BindingResult bindingResult) {
         if(bindingResult.hasFieldErrors()){
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
         }

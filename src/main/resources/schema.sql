@@ -1,5 +1,5 @@
-drop table if exists member;
-drop table if exists review;
+--drop table if exists member;
+--drop table if exists review;
 --drop table if exists like_review;
 
 create table member (
@@ -13,7 +13,7 @@ create table member (
 
 create table review (
     reviewId bigint auto_increment,
-    memberId bigint,
+     memberId bigint,
     title varchar(200),
     contents varchar(3000),
     isbn bigint,
@@ -23,10 +23,10 @@ create table review (
     primary key (reviewId)
 );
 
---CREATE TABLE like_review (
---  likeid bigint auto_increment,
---  reviewid bigint NOT NULL,
---  memberid bigint NOT NULL,
---  clickDate timestamp DEFAULT CURRENT_TIMESTAMP,
---  UNIQUE(REVIEWID, MEMBERID)
---);
+CREATE TABLE like_review (
+  likeid bigint auto_increment,
+  reviewid bigint NOT NULL,
+  memberid bigint NOT NULL,
+  clickDate timestamp DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(REVIEWID, MEMBERID)
+);

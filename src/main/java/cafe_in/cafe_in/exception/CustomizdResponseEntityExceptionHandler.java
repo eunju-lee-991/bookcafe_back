@@ -21,14 +21,12 @@ public class CustomizdResponseEntityExceptionHandler extends ResponseEntityExcep
     public final ResponseEntity<Object> handleAllExceptions(HttpStatus httpStatus, Exception ex) {
         ExceptionResponse exceptionResponse
                 = new ExceptionResponse(httpStatus.value(), ex.getMessage());
-
         return ResponseEntity.status(httpStatus).body(exceptionResponse);
     }
 
     public final ResponseEntity<Object> handleAllExceptions(HttpStatus httpStatus, String message) {
         ExceptionResponse exceptionResponse
                 = new ExceptionResponse(httpStatus.value(), message);
-
         return ResponseEntity.status(httpStatus).body(exceptionResponse);
     }
 

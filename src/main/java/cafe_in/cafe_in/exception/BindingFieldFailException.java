@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class BindingFieldFailException extends RuntimeException {
     public BindingFieldFailException(FieldError fieldError) {
-            super("오류 발생 필드명: " + fieldError.getField() + "[" + fieldError.getDefaultMessage() + ".]");
+            super("오류 발생 필드명: " + fieldError.getField()
+                    + "[" + fieldError.getDefaultMessage() + ".]");
     }
 
     public BindingFieldFailException(String message) {

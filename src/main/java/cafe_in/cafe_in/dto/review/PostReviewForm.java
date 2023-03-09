@@ -11,16 +11,12 @@ import javax.validation.constraints.Size;
 public class PostReviewForm {
     @NotNull
     Long memberId;
-
     @Size(min = 1, max = 200)
     String title;
-
     @Size(min = 1, max = 3000)
     String contents;
-
     @NotNull
     Long isbn;
-
     @Size(min = 1, max = 200)
     String bookTitle;
 }

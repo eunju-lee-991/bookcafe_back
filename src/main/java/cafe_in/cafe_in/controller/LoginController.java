@@ -56,34 +56,23 @@ public class LoginController {
 
         if (code != null) {
             authorize_code = code;
-            log.info(authorize_code);
         }
-
         // 토큰 받기
         access_token = getToken(authorize_code);
-
         // 토큰 유효성 검증
         validateToken(access_token);
-
         // 토큰으로 회원정보 조회
         KakaoMemberInfo memberInfo = getKakaoUserInfo(access_token);
-
         // 조회한 회원정보로 회원가입 여부 확인
         boolean isExist = memberService.isExistingMember(memberInfo.getKakaoMemberId());
 
-        if (isExist) {
-            // 회원이면 회원 조회
+        if (isExist) { // 회원이면 회원 조회
             member = memberService.findOne(memberInfo.getKakaoMemberId());
-            log.info("로그인");
-        } else {
-            // 회원 아니면 회원가입
+        } else { // 회원 아니면 회원가입
             member = join(memberInfo);
             newMember = true;
-            log.info("회원가입");
         }
-
-        // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
-        login(request, response, member, access_token);
+        login(request, response, member, access_token); // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
 
         return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
     }
@@ -109,17 +98,13 @@ public class LoginController {
 
                 if (isValidJsessionid) {
                     String access_token = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
-                    // kakao Logout
-                    Long loggedOutId = kakaoLogout(access_token);
-                    // delete session
-                    session.invalidate();
-
-                    log.info("LOGGED OUT: {}", loggedOutId);
+                    validateToken(access_token); // validate access token
+                    Long loggedOutId = kakaoLogout(access_token); // kakao Logout
+                    session.invalidate(); // delete session
                 }
-                // JSESSIONID는 HttpOnly여서 cliend side에서 수정x 서버에서 지워줘야함
                 // delete JSESSIONID cookie
                 jCookie.setMaxAge(0);
-                response.addCookie(jCookie);
+                response.addCookie(jCookie); // JSESSIONID는 HttpOnly여서 cliend side에서 수정x 서버에서 지워줘야함
             }
         } else {
             log.info("cookie or session is null");
@@ -136,7 +121,7 @@ public class LoginController {
         Long loggedOutId = null;
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.LOGOUT_URL, "POST", false);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        connection.setRequestProperty("Authorization", "Bearer " + access_token);
+        connection.setRequestProperty("Authorization", "Bearer " + access_token+"aa");
 
         int responseCode = connection.getResponseCode();
 
