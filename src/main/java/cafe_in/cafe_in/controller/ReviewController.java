@@ -1,5 +1,6 @@
 package cafe_in.cafe_in.controller;
 
+import cafe_in.cafe_in.common.Common;
 import cafe_in.cafe_in.domain.Review;
 import cafe_in.cafe_in.dto.review.*;
 import cafe_in.cafe_in.exception.BindingFieldFailException;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -30,14 +32,14 @@ public class ReviewController {
     private final MemberService memberService;
 
     @PostMapping("/reviews")
-    public ResponseEntity CreateReview(@Valid @RequestBody PostReviewForm postReviewForm, BindingResult bindingResult) { // JSON key는 대소문자도 구분
+    public ResponseEntity CreateReview(HttpServletRequest request, @Valid @RequestBody PostReviewForm postReviewForm, BindingResult bindingResult) { // JSON key는 대소문자도 구분
         if(bindingResult.hasFieldErrors()){
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
         }
 
         Review review = new Review();
 
-        review.setMemberId(postReviewForm.getMemberId());
+        review.setMemberId(Common.getId(request));
         review.setTitle(postReviewForm.getTitle());
         review.setContents(postReviewForm.getContents());
         review.setIsbn(postReviewForm.getIsbn());

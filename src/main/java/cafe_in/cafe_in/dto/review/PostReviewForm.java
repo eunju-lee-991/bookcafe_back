@@ -9,8 +9,6 @@ import javax.validation.constraints.Size;
 @Getter
 @Setter
 public class PostReviewForm {
-    @NotNull
-    Long memberId;
     @Size(min = 1, max = 200)
     String title;
     @Size(min = 1, max = 3000)

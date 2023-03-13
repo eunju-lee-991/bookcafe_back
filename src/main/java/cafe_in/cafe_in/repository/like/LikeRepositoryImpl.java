@@ -1,7 +1,6 @@
 package cafe_in.cafe_in.repository.like;
 
 import cafe_in.cafe_in.domain.Like;
-import cafe_in.cafe_in.repository.review.ReviewSql;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
@@ -12,7 +11,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Repository

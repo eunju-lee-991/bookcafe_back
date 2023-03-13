@@ -10,6 +10,6 @@ import javax.validation.constraints.NotNull;
 public class PostLikeForm {
     @NotNull
     private Long reviewId;
-    @NotNull
-    private Long memberId;
+//    @NotNull
+//    private Long memberId;
 }

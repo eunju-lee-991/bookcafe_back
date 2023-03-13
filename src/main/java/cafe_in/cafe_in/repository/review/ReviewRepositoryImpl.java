@@ -2,7 +2,6 @@ package cafe_in.cafe_in.repository.review;
 
 import cafe_in.cafe_in.domain.Review;
 import cafe_in.cafe_in.dto.review.ReviewDetailDto;
-import cafe_in.cafe_in.repository.member.MemberSql;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
