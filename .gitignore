@@ -2,6 +2,7 @@ HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
+src/main/java/cafe_in/cafe_in/controller/constant/KakaoApiKey.java
 !**/src/main/**/build/
 !**/src/test/**/build/
 

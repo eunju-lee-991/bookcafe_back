@@ -1,6 +1,7 @@
 package cafe_in.cafe_in.controller;
 
 import cafe_in.cafe_in.controller.constant.KakaoApiConstants;
+import cafe_in.cafe_in.controller.constant.KakaoApiKey;
 import cafe_in.cafe_in.controller.constant.SessionConstants;
 import cafe_in.cafe_in.domain.Member;
 import cafe_in.cafe_in.dto.member.LoginMemberResponse;
@@ -166,7 +167,7 @@ public class LoginController {
         StringBuilder sb = new StringBuilder();
 
         sb.append("grant_type=authorization_code");
-        sb.append("&client_id=" + KakaoApiConstants.REST_API_KEY);
+        sb.append("&client_id=" + KakaoApiKey.REST_API_KEY);
         sb.append("&redirect_uri=" + KakaoApiConstants.URLs.REDIRECT_URI);
         sb.append("&code=" + authorize_code);
         bw.write(sb.toString());
