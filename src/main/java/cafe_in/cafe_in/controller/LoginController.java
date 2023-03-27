@@ -51,19 +51,19 @@ public class LoginController {
     @GetMapping("/api/login/token")
     public LoginMemberResponse login(@RequestParam String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorize_code = "";
-        String access_token = "";
+        String kakaoAccessToken = "";
         Member member = null;
         boolean newMember = false;
 
         if (code != null) {
             authorize_code = code;
         }
-        // 토큰 받기
-        access_token = getToken(authorize_code);
+        // 카카오 액세스 토큰 받기
+        kakaoAccessToken = getToken(authorize_code, response);
         // 토큰 유효성 검증
-        validateToken(access_token);
+        validateToken(kakaoAccessToken);
         // 토큰으로 회원정보 조회
-        KakaoMemberInfo memberInfo = getKakaoUserInfo(access_token);
+        KakaoMemberInfo memberInfo = getKakaoUserInfo(kakaoAccessToken);
         // 조회한 회원정보로 회원가입 여부 확인
         boolean isExist = memberService.isExistingMember(memberInfo.getKakaoMemberId());
 
@@ -73,15 +73,15 @@ public class LoginController {
             member = join(memberInfo);
             newMember = true;
         }
-        login(request, response, member, access_token); // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
+        login(request, response, member, kakaoAccessToken); // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
 
         return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
     }
 
-    private void login(HttpServletRequest request, HttpServletResponse response, Member member, String access_token) {
+    private void login(HttpServletRequest request, HttpServletResponse response, Member member, String kakaoAccessToken) {
         HttpSession session = request.getSession();
         session.setAttribute(SessionConstants.LOGIN_MEMBER, member);
-        session.setAttribute(SessionConstants.ACCESS_TOKEN, access_token);
+        session.setAttribute(SessionConstants.ACCESS_TOKEN, kakaoAccessToken);
         log.info(session.getId());
     }
 
@@ -98,9 +98,9 @@ public class LoginController {
                 isValidJsessionid = jCookie.getValue().equals(session.getId()); // check whether the Jsessionid cookie value equals session id
 
                 if (isValidJsessionid) {
-                    String access_token = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
-                    validateToken(access_token); // validate access token
-                    Long loggedOutId = kakaoLogout(access_token); // kakao Logout
+                    String kakaoAccessToken = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
+                    validateToken(kakaoAccessToken); // validate access token
+                    Long loggedOutId = kakaoLogout(kakaoAccessToken); // kakao Logout
                     session.invalidate(); // delete session
                 }
                 // delete JSESSIONID cookie
@@ -116,13 +116,13 @@ public class LoginController {
         return ResponseEntity.noContent().build();
     }
 
-    private Long kakaoLogout(String access_token) throws IOException {
-        validateToken(access_token);
+    private Long kakaoLogout(String kakaoAccessToken) throws IOException {
+        validateToken(kakaoAccessToken);
 
         Long loggedOutId = null;
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.LOGOUT_URL, "POST", false);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        connection.setRequestProperty("Authorization", "Bearer " + access_token+"aa");
+        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken+"aa");
 
         int responseCode = connection.getResponseCode();
 
@@ -159,8 +159,8 @@ public class LoginController {
         return member;
     }
 
-    private String getToken(String authorize_code) throws IOException {
-        String access_token = "";
+    private String getToken(String authorize_code, HttpServletResponse response) throws IOException {
+        String kakaoAccessToken = "";
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.GET_TOKEN_URL, "POST", true);
 
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
@@ -182,16 +182,21 @@ public class LoginController {
             JsonParser jsonParser = new JacksonJsonParser();
 
             Map<String, Object> map = jsonParser.parseMap(result);
-            access_token = (String) map.get("access_token");
+            kakaoAccessToken = (String) map.get("access_token");
 
             /**
              * 토큰 만료 및 refresh는 나중에 처리
              */
-            refresh_token = (String) map.get("refresh_token");
+             refresh_token = (String) map.get("refresh_token");
+//            String refreshToken = (String) map.get("refresh_token");
+//            Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+//            refreshTokenCookie.setMaxAge(1000000);
+//            response.addCookie(refreshTokenCookie);
+
             expires_in = (int) map.get("expires_in");
             refresh_token_expires_in = (int) map.get("refresh_token_expires_in");
 
-            log.info("token : {} ", access_token);
+            log.info("token : {} ", kakaoAccessToken);
             log.info("expires_id  : {}", expires_in);
 
         } else {
@@ -220,12 +225,12 @@ public class LoginController {
             }
         }
 
-        return access_token;
+        return kakaoAccessToken;
     }
 
-    private boolean validateToken(String access_token) throws IOException {
+    private boolean validateToken(String kakaoAccessToken) throws IOException {
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.VALIDATE_TOKEN_URL, "GET", false);
-        connection.setRequestProperty("Authorization", "Bearer " + access_token);
+        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken);
 
         int responseCode = connection.getResponseCode();
         log.info("responseCode" + responseCode);
@@ -252,14 +257,14 @@ public class LoginController {
             log.info("code : {}, msg : {} ", code, msg);
 
             if(code == -401){
-                throw new InvalidTokenException(msg, access_token);
+                throw new InvalidTokenException(msg, kakaoAccessToken);
             }else {
                 throw new RuntimeException(msg);
             }
         }
     }
 
-    private KakaoMemberInfo getKakaoUserInfo(String access_token) throws IOException {
+    private KakaoMemberInfo getKakaoUserInfo(String kakaoAccessToken) throws IOException {
         KakaoMemberInfo kakaoMemberInfo = null;
 
         String[] propertyKeys = {"kakao_account.profile", "kakao_account.name", "kakao_account.email", "kakao_account.age_range", "kakao_account.birthday", "kakao_account.gender"};
@@ -278,7 +283,7 @@ public class LoginController {
         String query = "?property_keys=" + sb.toString();
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.GET_USER_INFO + query, "GET", false);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
-        connection.setRequestProperty("Authorization", "Bearer " + access_token);
+        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken);
 
         int responseCode = connection.getResponseCode();
         log.info("회원조회 response code : {}", responseCode);
