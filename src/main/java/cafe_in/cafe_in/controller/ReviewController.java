@@ -1,6 +1,7 @@
 package cafe_in.cafe_in.controller;
 
 import cafe_in.cafe_in.common.Common;
+import cafe_in.cafe_in.domain.Member;
 import cafe_in.cafe_in.domain.Review;
 import cafe_in.cafe_in.dto.review.*;
 import cafe_in.cafe_in.exception.BindingFieldFailException;
@@ -37,9 +38,10 @@ public class ReviewController {
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
         }
 
-        Review review = new Review();
+        Member member = (Member) request.getSession().getAttribute("MEMBER");
 
-        review.setMemberId(Common.getId(request));
+        Review review = new Review();
+        review.setMemberId(member.getId());
         review.setTitle(postReviewForm.getTitle());
         review.setContents(postReviewForm.getContents());
         review.setIsbn(postReviewForm.getIsbn());

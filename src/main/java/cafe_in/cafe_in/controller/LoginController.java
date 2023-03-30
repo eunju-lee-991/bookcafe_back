@@ -1,20 +1,29 @@
 package cafe_in.cafe_in.controller;
 
+import cafe_in.cafe_in.controller.constant.JwtTokenConstants;
 import cafe_in.cafe_in.controller.constant.KakaoApiConstants;
 import cafe_in.cafe_in.controller.constant.KakaoApiKey;
 import cafe_in.cafe_in.controller.constant.SessionConstants;
+import cafe_in.cafe_in.domain.Jwt;
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.dto.jwt.CreateTokenResponse;
 import cafe_in.cafe_in.dto.member.LoginMemberResponse;
 import cafe_in.cafe_in.dto.member.MemberDto;
 import cafe_in.cafe_in.exception.AuthorizationCodeNotFoundException;
 import cafe_in.cafe_in.exception.InvalidTokenException;
+import cafe_in.cafe_in.service.JwtTokenService;
 import cafe_in.cafe_in.service.MemberService;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import lombok.*;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
@@ -25,9 +34,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -35,6 +42,7 @@ import java.util.Optional;
 public class LoginController {
 
     private final MemberService memberService;
+    private final JwtTokenService tokenService;
 
     /**
      * 토큰 만료 및 refresh는 나중에 처리
@@ -43,6 +51,24 @@ public class LoginController {
     private int expires_in;
     private int refresh_token_expires_in;
 
+    @GetMapping("/api/jwt-test")
+    public Jwt testJWT(HttpServletRequest request, HttpServletResponse response) {
+
+        Member member = (Member) request.getSession(false).getAttribute("MEMBER");
+
+        String authHeader = request.getHeader("Authorization");
+        log.info(authHeader);
+
+        Jwt tokenInfo = null;
+
+        if (authHeader == null || !authHeader.startsWith("Bearer")) {
+            log.info("authHeader 없음");
+        } else {
+            tokenInfo = tokenService.getTokenInfo(authHeader.replace(JwtTokenConstants.TOKEN_PREFIX, ""));
+        }
+
+        return tokenInfo;
+    }
 
     /**
      * 인가코드를 서버에서 바로 받으면 토큰 받고 회원가입/로그인 처리까지 한 후에 프론트엔드 서버로 다시 돌아가기 어려움
@@ -73,9 +99,16 @@ public class LoginController {
             member = join(memberInfo);
             newMember = true;
         }
-        login(request, response, member, kakaoAccessToken); // 로그인 처리(세션에 토큰이랑 회원정보 저장 후 쿠키)
 
-        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))));
+        /**
+         * 세션 저장 대신 JWT 토큰 사용
+         */
+//        login(request, response, member, kakaoAccessToken); // 로그인 처리(세션에 회원정보 저장 후 쿠키)
+        Jwt jwt = tokenService.createToken(member.getId(), member.getNickname(), response);
+        CreateTokenResponse createTokenResponse = new CreateTokenResponse(jwt.accessToken, jwt.refreshToken, jwt.accessTokenExp, jwt.refreshTokenExp);
+        log.info("AccessToken: " + jwt.getAccessToken());
+
+        return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))), createTokenResponse);
     }
 
     private void login(HttpServletRequest request, HttpServletResponse response, Member member, String kakaoAccessToken) {
@@ -122,7 +155,7 @@ public class LoginController {
         Long loggedOutId = null;
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.LOGOUT_URL, "POST", false);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken+"aa");
+        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken + "aa");
 
         int responseCode = connection.getResponseCode();
 
@@ -187,7 +220,7 @@ public class LoginController {
             /**
              * 토큰 만료 및 refresh는 나중에 처리
              */
-             refresh_token = (String) map.get("refresh_token");
+            refresh_token = (String) map.get("refresh_token");
 //            String refreshToken = (String) map.get("refresh_token");
 //            Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
 //            refreshTokenCookie.setMaxAge(1000000);
@@ -218,9 +251,9 @@ public class LoginController {
 
             if (error_code.equals("KOE320")) { // authorize_code not found
                 throw new AuthorizationCodeNotFoundException(error_description);
-            }else if(error_code.equals("KOE303")){ // Redirect URI mismatch.
+            } else if (error_code.equals("KOE303")) { // Redirect URI mismatch.
                 throw new RuntimeException("Redirect URI mismatch");
-            }else if(error_code.equals("KOE101")){ // Not exist client_id
+            } else if (error_code.equals("KOE101")) { // Not exist client_id
                 throw new RuntimeException("Not exist client_id");
             }
         }
@@ -256,9 +289,9 @@ public class LoginController {
 
             log.info("code : {}, msg : {} ", code, msg);
 
-            if(code == -401){
+            if (code == -401) {
                 throw new InvalidTokenException(msg, kakaoAccessToken);
-            }else {
+            } else {
                 throw new RuntimeException(msg);
             }
         }
