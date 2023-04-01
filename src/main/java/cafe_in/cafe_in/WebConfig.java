@@ -27,7 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
             HttpServletRequest request, HttpServletResponse response, JwtAuthenticationFilter jwtAuthenticationFilter) {
         FilterRegistrationBean<JwtAuthenticationFilter> bean = new FilterRegistrationBean<>();
         bean.setFilter(jwtAuthenticationFilter);
-        bean.addUrlPatterns("/reviews/*", "/likes/*", "/members/*", "/logout"); //"/api/*",
+        bean.addUrlPatterns("/reviews/*", "/likes/*", "/logout"); //"/api/*",
         bean.setOrder(1);
        return bean;
     }

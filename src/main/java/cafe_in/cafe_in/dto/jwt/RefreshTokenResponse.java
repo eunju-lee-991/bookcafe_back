@@ -9,10 +9,7 @@ import java.util.Date;
 
 @Getter @Setter
 @Builder
-@AllArgsConstructor
-public class CreateTokenResponse {
+public class RefreshTokenResponse {
     public String accessToken;
-    public String refreshToken;
     public Date accessTokenExp;
-    public Date refreshTokenExp;
 }

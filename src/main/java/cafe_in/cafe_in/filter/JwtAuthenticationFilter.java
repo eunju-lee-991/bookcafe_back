@@ -3,6 +3,8 @@ package cafe_in.cafe_in.filter;
 import cafe_in.cafe_in.controller.JwtTokenVerifier;
 import cafe_in.cafe_in.controller.constant.JwtTokenConstants;
 import cafe_in.cafe_in.domain.Member;
+import cafe_in.cafe_in.exception.ExceptionResponse;
+import cafe_in.cafe_in.exception.InvalidJwtTokenException;
 import cafe_in.cafe_in.repository.member.MemberRepository;
 import cafe_in.cafe_in.repository.member.MemberRepositoryImpl;
 import com.auth0.jwt.JWT;
@@ -50,7 +52,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
 
             }catch (JWTVerificationException ex) {
-                log.error(ex.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // HTTP 응답 상태 코드 설정
+                response.setContentType("application/json"); // 응답 형식 지정
+                response.setCharacterEncoding("UTF-8"); // 인코딩 지정
+
+                String message = "{\"message\": \"Access Token is invalid. Unauthorized\"}"; // 응답 메시지
+
+                response.getWriter().write(message); // 응답 메시지를 HTTP 응답 본문에 작성
+                response.getWriter().flush(); // 버퍼 비우기
             }
         }else {
             throw new RuntimeException("AUTHORIZATION 헤더가 이상해요");

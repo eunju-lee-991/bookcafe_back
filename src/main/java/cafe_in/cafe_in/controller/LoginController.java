@@ -7,6 +7,7 @@ import cafe_in.cafe_in.controller.constant.SessionConstants;
 import cafe_in.cafe_in.domain.Jwt;
 import cafe_in.cafe_in.domain.Member;
 import cafe_in.cafe_in.dto.jwt.CreateTokenResponse;
+import cafe_in.cafe_in.dto.jwt.RefreshTokenResponse;
 import cafe_in.cafe_in.dto.member.LoginMemberResponse;
 import cafe_in.cafe_in.dto.member.MemberDto;
 import cafe_in.cafe_in.exception.AuthorizationCodeNotFoundException;
@@ -18,6 +19,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import lombok.*;
 import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.javassist.NotFoundException;
 import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
 import org.springframework.boot.json.JacksonJsonParser;
@@ -57,7 +59,7 @@ public class LoginController {
     private int refresh_token_expires_in;
 
     @GetMapping("/api/jwt-test")
-    public Jwt testJWT(HttpServletRequest request, HttpServletResponse response) {
+    public RefreshTokenResponse testJWT(HttpServletRequest request, HttpServletResponse response) {
 
         Member member = (Member) request.getSession(false).getAttribute("MEMBER");
 
@@ -72,7 +74,7 @@ public class LoginController {
             tokenInfo = tokenService.getTokenInfo(authHeader.replace(JwtTokenConstants.TOKEN_PREFIX, ""));
         }
 
-        return tokenInfo;
+        return refreshTokenResponse;
     }
 
     /**
@@ -106,7 +108,7 @@ public class LoginController {
             newMember = true;
         }
 
-        Jwt jwt = tokenService.createToken(member.getId(), member.getNickname(), kakaoAccessToken, response); // 세션 저장 대신 JWT 토큰 사용
+        Jwt jwt = tokenService.createTokens(member.getId(), member.getNickname(), kakaoAccessToken); // 세션 저장 대신 JWT 토큰 사용
 
         // 쿠키 설정
         long maxAge = (jwt.getRefreshTokenExp().getTime() - System.currentTimeMillis()) / 1000;
@@ -133,7 +135,8 @@ public class LoginController {
             response.addCookie(refreshTokenCookie.get());
         } // refreshTokenCookie 삭제. HttpOnly여서 서버에서 삭제
 
-        String accessToken = getCookieValue(request.getCookies(), "accessToken");
+        String accessToken = request.getHeader("Authorization").replace(JwtTokenConstants.TOKEN_PREFIX, "");
+
         Jwt jwt = tokenService.getTokenInfo(accessToken);
         Long loggedoutId = kakaoLogout(jwt.getSocialAccessToken()); // 카카오 로그아웃
 

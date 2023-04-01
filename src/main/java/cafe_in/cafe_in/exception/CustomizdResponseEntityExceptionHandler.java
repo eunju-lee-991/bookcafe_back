@@ -8,14 +8,14 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Date;
 import java.util.Iterator;
 
-@RestController
-@ControllerAdvice
+@RestControllerAdvice
 public class CustomizdResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public final ResponseEntity<Object> handleAllExceptions(HttpStatus httpStatus, Exception ex) {
@@ -64,5 +64,10 @@ public class CustomizdResponseEntityExceptionHandler extends ResponseEntityExcep
     @ExceptionHandler(DuplicateUserException.class)
     public final ResponseEntity<Object> handleDuplicateUserException(Exception ex, WebRequest request) {
         return handleAllExceptions(HttpStatus.BAD_REQUEST, ex);
+    }
+
+    @ExceptionHandler(InvalidJwtTokenException.class)
+    public final ResponseEntity<Object> handleInvalidJwtTokenException(Exception ex) {
+        return handleAllExceptions(HttpStatus.UNAUTHORIZED, ex);
     }
 }
