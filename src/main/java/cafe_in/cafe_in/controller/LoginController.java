@@ -18,11 +18,13 @@ import com.auth0.jwt.algorithms.Algorithm;
 import lombok.*;
 import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.parser.Authorization;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +37,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static cafe_in.cafe_in.common.Common.getCookieValue;
+import static cafe_in.cafe_in.common.Common.setCookie;
 
 @Slf4j
 @RestController
@@ -84,6 +89,7 @@ public class LoginController {
         if (code != null) {
             authorize_code = code;
         }
+
         // 카카오 액세스 토큰 받기
         kakaoAccessToken = getToken(authorize_code, response);
         // 토큰 유효성 검증
@@ -100,13 +106,14 @@ public class LoginController {
             newMember = true;
         }
 
-        /**
-         * 세션 저장 대신 JWT 토큰 사용
-         */
-//        login(request, response, member, kakaoAccessToken); // 로그인 처리(세션에 회원정보 저장 후 쿠키)
-        Jwt jwt = tokenService.createToken(member.getId(), member.getNickname(), response);
+        Jwt jwt = tokenService.createToken(member.getId(), member.getNickname(), kakaoAccessToken, response); // 세션 저장 대신 JWT 토큰 사용
+
+        // 쿠키 설정
+        long maxAge = (jwt.getRefreshTokenExp().getTime() - System.currentTimeMillis()) / 1000;
+        Cookie refreshTokenCookie = setCookie("refreshToken", jwt.refreshToken, true, false, (int) maxAge, "/");
+        response.addCookie(refreshTokenCookie);
+
         CreateTokenResponse createTokenResponse = new CreateTokenResponse(jwt.accessToken, jwt.refreshToken, jwt.accessTokenExp, jwt.refreshTokenExp);
-        log.info("AccessToken: " + jwt.getAccessToken());
 
         return new LoginMemberResponse(newMember, new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl(), member.getJoinDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"))), createTokenResponse);
     }
@@ -120,32 +127,20 @@ public class LoginController {
 
     @GetMapping("/logout")
     private ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false);
-        Cookie[] cookies = request.getCookies();
-        boolean isValidJsessionid = false;
+        Optional<Cookie> refreshTokenCookie = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
+        if (refreshTokenCookie.isPresent()) {
+            refreshTokenCookie.get().setMaxAge(0);
+            response.addCookie(refreshTokenCookie.get());
+        } // refreshTokenCookie 삭제. HttpOnly여서 서버에서 삭제
 
-        if (cookies != null && session != null) {
-            Optional<Cookie> jsessionCookie = Arrays.stream(cookies).filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst();
-            if (jsessionCookie.isPresent()) {
-                Cookie jCookie = jsessionCookie.get();
-                isValidJsessionid = jCookie.getValue().equals(session.getId()); // check whether the Jsessionid cookie value equals session id
+        String accessToken = getCookieValue(request.getCookies(), "accessToken");
+        Jwt jwt = tokenService.getTokenInfo(accessToken);
+        Long loggedoutId = kakaoLogout(jwt.getSocialAccessToken()); // 카카오 로그아웃
 
-                if (isValidJsessionid) {
-                    String kakaoAccessToken = (String) session.getAttribute(SessionConstants.ACCESS_TOKEN);
-                    validateToken(kakaoAccessToken); // validate access token
-                    Long loggedOutId = kakaoLogout(kakaoAccessToken); // kakao Logout
-                    session.invalidate(); // delete session
-                }
-                // delete JSESSIONID cookie
-                jCookie.setMaxAge(0);
-                response.addCookie(jCookie); // JSESSIONID는 HttpOnly여서 cliend side에서 수정x 서버에서 지워줘야함
-            }
-        } else {
-            log.info("cookie or session is null");
-            if (session != null) {
-                session.invalidate();
-            }
+        if (loggedoutId == null) {
+            throw new RuntimeException("logout failed");
         }
+
         return ResponseEntity.noContent().build();
     }
 
@@ -155,7 +150,7 @@ public class LoginController {
         Long loggedOutId = null;
         HttpURLConnection connection = getConnection(KakaoApiConstants.URLs.LOGOUT_URL, "POST", false);
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken + "aa");
+        connection.setRequestProperty("Authorization", "Bearer " + kakaoAccessToken);
 
         int responseCode = connection.getResponseCode();
 

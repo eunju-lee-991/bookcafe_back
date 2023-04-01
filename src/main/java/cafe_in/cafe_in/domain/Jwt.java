@@ -12,7 +12,8 @@ import java.util.Date;
 public class Jwt {
     public String accessToken;
     public String refreshToken;
-    public Long id;
     public Date accessTokenExp;
     public Date refreshTokenExp;
+    public Long loginId;
+    public String socialAccessToken;
 }

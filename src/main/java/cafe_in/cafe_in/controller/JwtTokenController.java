@@ -10,6 +10,7 @@ public class JwtTokenController {
     private final JwtTokenService tokenService;
 
     // 토큰 발급
+    // 필요할지 고민
 
     // 토큰 갱신
 

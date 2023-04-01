@@ -18,33 +18,27 @@ import java.util.Date;
 @Service
 public class JwtTokenService {
     private int accessTokenExpMinutes = 10;
-    private int refreshTokenExpMinutes = 100000;
+    private int refreshTokenExpMinutes = 100;
     private JwtTokenVerifier jwtTokenVerifier;
 
     // 토큰 발급
-    public Jwt createToken(Long id, String nickname, HttpServletResponse response) {
+    public Jwt createToken(Long id, String nickname, String kakaoAccessToken, HttpServletResponse response) {
         Date accessTokenExp = new Date(System.currentTimeMillis() + (60000 * accessTokenExpMinutes));
         Date refreshTokenExp = new Date(System.currentTimeMillis() + (60000 * refreshTokenExpMinutes));
 
         String accessToken = JWT.create()
                 .withSubject(String.valueOf(id))
                 .withClaim("nickname", nickname)
+                .withClaim("kakaoAccessToken", kakaoAccessToken)
                 .withExpiresAt(accessTokenExp)
                 .sign(Algorithm.HMAC512(JwtTokenConstants.SECRET_KEY));
 
         String refreshToken = JWT.create()
                 .withSubject(String.valueOf(id))
                 .withClaim("nickname", nickname)
+                .withClaim("kakaoAccessToken", kakaoAccessToken)
                 .withExpiresAt(refreshTokenExp)
                 .sign(Algorithm.HMAC512(JwtTokenConstants.SECRET_KEY));
-
-        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setMaxAge(60000 * refreshTokenExpMinutes);
-        refreshTokenCookie.setPath("/");
-//        refreshTokenCookie.setSecure(true); // HTTPS 프로토콜에서만 쿠키 전송 가능
-
-        response.addCookie(refreshTokenCookie);
 
         return Jwt.builder().
                 accessToken(accessToken)
@@ -59,6 +53,7 @@ public class JwtTokenService {
         String accessToken = null;
         Date accessTokenExp = null;
         Long id = null;
+        String socialAccessToken = null;
         jwtTokenVerifier = new JwtTokenVerifier(JwtTokenConstants.SECRET_KEY);
 
         DecodedJWT decodedJWT = jwtTokenVerifier.verify(receivedToken); // = JWT.require(Algorithm.HMAC512(JwtTokenConstants.SECRET_KEY)).build().verify(receivedToken);
@@ -66,13 +61,14 @@ public class JwtTokenService {
         if (decodedJWT.getClaim("nickname") != null) {
             accessToken = receivedToken;
             accessTokenExp = decodedJWT.getExpiresAt();
-             id = Long.valueOf(decodedJWT.getSubject());
+            id = Long.valueOf(decodedJWT.getSubject());
+            socialAccessToken = decodedJWT.getClaim("kakaoAccessToken").asString();
 
             log.info(accessTokenExp.toString());
-        }else {
+        } else {
             throw new RuntimeException("invalid JWT access token.");
         }
-        return Jwt.builder().accessToken(accessToken).accessTokenExp(accessTokenExp).id(id).build();
+        return Jwt.builder().accessToken(accessToken).accessTokenExp(accessTokenExp).loginId(id).socialAccessToken(socialAccessToken).build();
     }
 
     // 토큰 갱신
@@ -84,7 +80,4 @@ public class JwtTokenService {
         // 액세스토큰, 만료기한 리턴
         return null;
     }
-
-    // 토큰 만료
-
 }
