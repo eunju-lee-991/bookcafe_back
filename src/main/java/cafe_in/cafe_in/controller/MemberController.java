@@ -20,11 +20,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/members")
 public class MemberController {
 
     private final MemberService memberService;
 
-    @PostMapping("/members")
+    @PostMapping("")
     public ResponseEntity createMember(@Valid @RequestBody PostMemberForm postMemberForm, BindingResult bindingResult) {
         if(bindingResult.hasFieldErrors()){
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
@@ -44,7 +45,7 @@ public class MemberController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
-    @GetMapping("/members/{id}")
+    @GetMapping("/{id}")
     public MemberDto findOne(@PathVariable("id") Long id) {
         Member member = memberService.findOne(id);
         MemberDto dto = new MemberDto(member.getId(), member.getNickname(), member.getEmail(), member.getProfileImageUrl()
@@ -52,7 +53,7 @@ public class MemberController {
         return dto;
     }
 
-    @GetMapping("/members")
+    @GetMapping("")
     public MemberListResponse findMembers(@RequestBody(required = false) MemberSearch memberSearch) { // parameter Map으로 수정!!!!
         List<Member> members
                 = memberSearch == null ? memberService.findMembers() : memberService.findMembersByCriteria(memberSearch);
@@ -63,7 +64,7 @@ public class MemberController {
         return new MemberListResponse(result.size(), result);
     }
 
-    @PatchMapping("/members/{id}")
+    @PatchMapping("/{id}")
     public UpdateMemberResponse updateMember(@PathVariable Long id, @Valid @RequestBody UpdateMemberForm updateMemberForm, BindingResult bindingResult) {
         if(bindingResult.hasFieldErrors()){
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
@@ -79,7 +80,7 @@ public class MemberController {
         return new UpdateMemberResponse(updatedId);
     }
 
-    @DeleteMapping("/members/{id}")
+    @DeleteMapping("/{id}")
     public DeleteMemberResponse deleteMember(@PathVariable Long id) {
         Long deletedId = memberService.deleteMember(id);
         return new DeleteMemberResponse(deletedId);

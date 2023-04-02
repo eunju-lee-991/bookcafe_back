@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,12 +29,13 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping("/api/reviews")
 public class ReviewController {
 
     private final ReviewService reviewService;
     private final MemberService memberService;
 
-    @PostMapping("/reviews")
+    @PostMapping("")
     public ResponseEntity CreateReview(HttpServletRequest request, @Valid @RequestBody PostReviewForm postReviewForm, BindingResult bindingResult) { // JSON key는 대소문자도 구분
         if(bindingResult.hasFieldErrors()){
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
@@ -53,7 +56,7 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new PostReviewResponse(reviewId));
     }
 
-    @GetMapping("/reviews")
+    @GetMapping("")
     public ReviewListResponse findReviews(@RequestParam(required = false) Map<String, String> params) {
         List<Review> reviews = null;
         int totalCount = 0;
@@ -75,17 +78,22 @@ public class ReviewController {
         List<ReviewSimpleDto> reviewSimpleDtos = reviews.stream().map(review -> new ReviewSimpleDto(review.getReviewId(), review.getTitle(), review.getIsbn(), review.getBookTitle()
                 , review.getUpdatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))).collect(Collectors.toList());
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        log.info("authentication.isAuthenticated()");
+        System.out.println(authentication.isAuthenticated());
+
         return new ReviewListResponse(totalCount, isEnd, reviewSimpleDtos);  // 나중에 count랑 리뷰 데이터 가져오는 거 따로 분리하기
     }
 
-    @GetMapping("/reviews/{reviewId}")
+    @GetMapping("/{reviewId}")
     public ReviewResponse findOneReview(@PathVariable("reviewId") Long reviewId) {
         ReviewDetailDto reviewDetailDto = reviewService.findOneReview(reviewId);
 
         return new ReviewResponse(reviewDetailDto);
     }
 
-    @PatchMapping("/reviews/{reviewId}")
+    @PatchMapping("/{reviewId}")
     public UpdateReviewResponse updateReview(@PathVariable("reviewId") Long reviewId
             , @Valid @RequestBody UpdateReviewForm updateReviewForm, BindingResult bindingResult) {
         if(bindingResult.hasFieldErrors()){
@@ -101,7 +109,7 @@ public class ReviewController {
         return new UpdateReviewResponse(reviewService.updateReview(review));
     }
 
-    @DeleteMapping("/reviews/{reviewId}")
+    @DeleteMapping("/{reviewId}")
     public DeleteReviewReponse delete(@PathVariable("reviewId") Long reviewId) {
         return new DeleteReviewReponse(reviewService.deleteReview(reviewId));
     }

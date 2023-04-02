@@ -14,21 +14,20 @@ import cafe_in.cafe_in.exception.AuthorizationCodeNotFoundException;
 import cafe_in.cafe_in.exception.InvalidTokenException;
 import cafe_in.cafe_in.service.JwtTokenService;
 import cafe_in.cafe_in.service.MemberService;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import lombok.*;
-import lombok.extern.java.Log;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.javassist.NotFoundException;
-import org.apache.tomcat.util.http.parser.Authorization;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.json.JsonParser;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -37,15 +36,19 @@ import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.Principal;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 
-import static cafe_in.cafe_in.common.Common.getCookieValue;
 import static cafe_in.cafe_in.common.Common.setCookie;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/*")
 public class LoginController {
 
     private final MemberService memberService;
@@ -58,9 +61,9 @@ public class LoginController {
     private int expires_in;
     private int refresh_token_expires_in;
 
-    @GetMapping("/api/jwt-test")
+    @GetMapping("/jwt-test")
     public RefreshTokenResponse testJWT(HttpServletRequest request, HttpServletResponse response) {
-
+        RefreshTokenResponse refreshTokenResponse = null;
         Member member = (Member) request.getSession(false).getAttribute("MEMBER");
 
         String authHeader = request.getHeader("Authorization");
@@ -71,7 +74,7 @@ public class LoginController {
         if (authHeader == null || !authHeader.startsWith("Bearer")) {
             log.info("authHeader 없음");
         } else {
-            tokenInfo = tokenService.getTokenInfo(authHeader.replace(JwtTokenConstants.TOKEN_PREFIX, ""));
+            tokenInfo = tokenService.getAccessTokenInfo(authHeader.replace(JwtTokenConstants.TOKEN_PREFIX, ""));
         }
 
         return refreshTokenResponse;
@@ -81,7 +84,7 @@ public class LoginController {
      * 인가코드를 서버에서 바로 받으면 토큰 받고 회원가입/로그인 처리까지 한 후에 프론트엔드 서버로 다시 돌아가기 어려움
      * 그래서 client server에서 인가코드 받고 백엔드로 넘겨준 후에 백엔드에서 토큰 발급/회원가입or로그인 처리하였음
      */
-    @GetMapping("/api/login/token")
+    @GetMapping("/login/token")
     public LoginMemberResponse login(@RequestParam String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorize_code = "";
         String kakaoAccessToken = "";
@@ -105,12 +108,11 @@ public class LoginController {
             member = memberService.findOne(memberInfo.getKakaoMemberId());
         } else { // 회원 아니면 회원가입
             member = join(memberInfo);
-            newMember = true;
         }
 
         Jwt jwt = tokenService.createTokens(member.getId(), member.getNickname(), kakaoAccessToken); // 세션 저장 대신 JWT 토큰 사용
 
-        // 쿠키 설정
+        // 리프레쉬 토큰 httpOnly 쿠키 설정
         long maxAge = (jwt.getRefreshTokenExp().getTime() - System.currentTimeMillis()) / 1000;
         Cookie refreshTokenCookie = setCookie("refreshToken", jwt.refreshToken, true, false, (int) maxAge, "/");
         response.addCookie(refreshTokenCookie);
@@ -129,15 +131,19 @@ public class LoginController {
 
     @GetMapping("/logout")
     private ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Optional<Cookie> refreshTokenCookie = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
-        if (refreshTokenCookie.isPresent()) {
-            refreshTokenCookie.get().setMaxAge(0);
-            response.addCookie(refreshTokenCookie.get());
-        } // refreshTokenCookie 삭제. HttpOnly여서 서버에서 삭제
+//        Optional<Cookie> refreshTokenCookie = Arrays.stream(request.getCookies())
+//                .filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
+//
+//        if (refreshTokenCookie.isPresent()) {
+//            refreshTokenCookie.get().setMaxAge(0);
+//            response.addCookie(refreshTokenCookie.get());
+//        }
 
-        String accessToken = request.getHeader("Authorization").replace(JwtTokenConstants.TOKEN_PREFIX, "");
+        response.addHeader("Set-Cookie", "refreshToken=; Max-Age=0; Path=/; HttpOnly");  // refreshTokenCookie 삭제. HttpOnly여서 서버에서 삭제
 
-        Jwt jwt = tokenService.getTokenInfo(accessToken);
+        String accessToken = request.getHeader(JwtTokenConstants.HEADER_AUTHORIZATION).replace(JwtTokenConstants.TOKEN_PREFIX, "");
+
+        Jwt jwt = tokenService.getAccessTokenInfo(accessToken);
         Long loggedoutId = kakaoLogout(jwt.getSocialAccessToken()); // 카카오 로그아웃
 
         if (loggedoutId == null) {

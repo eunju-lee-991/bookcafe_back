@@ -24,7 +24,7 @@ public class JwtTokenController {
 
     // 토큰 갱신
     @GetMapping("/api/jwt/refresh")
-    public ResponseEntity testJWT(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
         RefreshTokenResponse refreshTokenResponse = null;
 
         Optional<Cookie> refreshToken = Arrays.stream(request.getCookies()).filter(

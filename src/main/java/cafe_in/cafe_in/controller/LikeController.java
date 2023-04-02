@@ -22,11 +22,12 @@ import java.time.format.DateTimeFormatter;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping("/api/likes")
 public class LikeController {
 
     private final LikeService likeService;
 
-    @PostMapping("/likes")
+    @PostMapping("")
     public ResponseEntity createLike(HttpServletRequest request, @RequestBody @Valid PostLikeForm postLikeForm, BindingResult bindingResult) {
         if (bindingResult.hasFieldErrors()) {
             throw new BindingFieldFailException(bindingResult.getFieldErrors().stream().findFirst().get());
@@ -41,7 +42,7 @@ public class LikeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new PostLikeResponse(createdLikeid));
     }
 
-    @GetMapping("/likes")
+    @GetMapping("")
     public LikeResponse findLike(@RequestParam Long reviewId, @RequestParam Long memberId) {
         LikeResponse response = new LikeResponse();
 
@@ -59,7 +60,7 @@ public class LikeController {
         return response;
     }
 
-    @DeleteMapping("/likes/{likeId}")
+    @DeleteMapping("/{likeId}")
     public ResponseEntity<Void> deleteLike(@PathVariable Long likeId) {
         likeService.deleteLike(likeId);
         return ResponseEntity.noContent().build();

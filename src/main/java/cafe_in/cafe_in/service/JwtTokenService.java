@@ -5,15 +5,12 @@ import cafe_in.cafe_in.controller.constant.JwtTokenConstants;
 import cafe_in.cafe_in.domain.Jwt;
 import cafe_in.cafe_in.exception.InvalidJwtTokenException;
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
 
 @Slf4j
@@ -23,10 +20,9 @@ public class JwtTokenService {
     private int refreshTokenExpMinutes = 100;
     private JwtTokenVerifier jwtTokenVerifier;
 
-    // 토큰 발급
     public Jwt createTokens(Long id, String nickname, String socialAccessToken) {
-        String accessToken = createToken(id, nickname, socialAccessToken, accessTokenExpMinutes);
-        String refreshToken = createToken(id, nickname, socialAccessToken, refreshTokenExpMinutes);
+        String accessToken = createToken(id, nickname, socialAccessToken, accessTokenExpMinutes, "accessToken");
+        String refreshToken = createToken(id, nickname, socialAccessToken, refreshTokenExpMinutes, "refreshToken");
 
         return Jwt.builder().
                 accessToken(accessToken)
@@ -37,7 +33,7 @@ public class JwtTokenService {
     }
 
     // 토큰 정보확인
-    public Jwt getTokenInfo(String receivedToken) {
+    public Jwt getAccessTokenInfo(String receivedToken) {
         String accessToken = null;
         Date accessTokenExp = null;
         String socialAccessToken = null;
@@ -69,9 +65,9 @@ public class JwtTokenService {
         DecodedJWT decodedJWT = jwtTokenVerifier.verify(refreshToken);
 
         // 리프레쉬 토큰 검증 후 액세스 토큰 새로 발급
-        if (decodedJWT.getClaim("nickname") != null) {
+        if (decodedJWT.getClaim("nickname") != null && decodedJWT.getClaim("tokenType").asString().equals("refreshToken")) {
             accessToken = createToken(Long.valueOf(decodedJWT.getSubject()), decodedJWT.getClaim("nickname").asString()
-                    , decodedJWT.getClaim("socialAccessToken").asString(), accessTokenExpMinutes);
+                    , decodedJWT.getClaim("socialAccessToken").asString(), accessTokenExpMinutes, "accessToken");
         } else {
             throw new InvalidJwtTokenException(refreshToken);
         }
@@ -81,13 +77,14 @@ public class JwtTokenService {
     }
 
     // 토큰 발급
-    public String createToken(Long id, String nickname, String socialAccessToken, int expMinutes) {
+    public String createToken(Long id, String nickname, String socialAccessToken, int expMinutes, String tokenType) {
         Date accessTokenExp = new Date(System.currentTimeMillis() + (60000 * expMinutes));
 
         String createdToken = JWT.create()
                 .withSubject(String.valueOf(id))
                 .withClaim("nickname", nickname)
                 .withClaim("socialAccessToken", socialAccessToken)
+                .withClaim("tokenType", tokenType)
                 .withExpiresAt(accessTokenExp)
                 .sign(Algorithm.HMAC512(JwtTokenConstants.SECRET_KEY));
 

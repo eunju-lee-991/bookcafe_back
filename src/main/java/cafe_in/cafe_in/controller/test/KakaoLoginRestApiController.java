@@ -60,7 +60,7 @@ public class KakaoLoginRestApiController {
         return "logged-in"; // 뭐 리턴하지?
     }
 
-    @GetMapping("/api/token")
+//    @GetMapping("/api/token")
     public String getToken(@RequestParam String code) throws IOException {
         log.info("CODE : " + code);
 
@@ -112,7 +112,7 @@ public class KakaoLoginRestApiController {
         return "";
     }
 
-    @GetMapping("/api/member")
+//    @GetMapping("/api/member")
     public String member() throws IOException {
 
         URL url = null;
@@ -153,7 +153,7 @@ public class KakaoLoginRestApiController {
         return "result";
     }
 
-    @GetMapping("/api/logout")
+//    @GetMapping("/api/logout")
     public String kakaoLogout() throws IOException {
         URL url = null;
         HttpURLConnection connection = null;
